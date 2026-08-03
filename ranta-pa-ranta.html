@@ -1,0 +1,1610 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Investeringskalkylator</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,600;1,300&family=IBM+Plex+Sans:wght@300;400;500&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:        #f0ede8;
+  --surface:   #ffffff;
+  --surface2:  #fafaf9;
+  --border:    #e2ded8;
+  --border2:   #ccc8c2;
+  --ink:       #1c1917;
+  --ink-2:     #57534e;
+  --ink-3:     #a8a29e;
+  --ink-4:     #d6d3d1;
+  --blue:      #1e40af;
+  --blue-mid:  #3b82f6;
+  --blue-dim:  #eff6ff;
+  --blue-b:    #bfdbfe;
+  --green:     #065f46;
+  --green-mid: #059669;
+  --green-dim: #ecfdf5;
+  --green-b:   #a7f3d0;
+  --amber:     #92400e;
+  --amber-mid: #d97706;
+  --amber-dim: #fffbeb;
+  --amber-b:   #fde68a;
+  --violet:    #4c1d95;
+  --violet-mid:#7c3aed;
+  --violet-dim:#f5f3ff;
+  --violet-b:  #ddd6fe;
+  --red:       #991b1b;
+  --red-mid:   #dc2626;
+  --red-dim:   #fef2f2;
+  --red-b:     #fecaca;
+  --r:  6px;
+  --r2: 10px;
+  --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,.08), 0 2px 4px rgba(0,0,0,.04);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans',sans-serif;font-size:13px;min-height:100vh}
+
+/* ── Wrapper ── */
+.wrapper{max-width:1260px;margin:0 auto;padding:36px 24px 80px}
+
+/* ── Header ── */
+.header{margin-bottom:28px;padding-bottom:24px;border-bottom:1px solid var(--border);display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.eyebrow{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);margin-bottom:8px}
+h1{font-family:'Fraunces',serif;font-weight:300;font-size:clamp(1.8rem,3vw,2.8rem);letter-spacing:-.03em;line-height:1;color:var(--ink)}
+h1 em{font-style:italic;color:var(--blue)}
+.header-sub{margin-top:6px;font-size:12px;color:var(--ink-3);font-weight:300}
+.header-date{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink-3);text-align:right}
+
+/* ── Tab nav ── */
+.tab-nav{display:flex;gap:2px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:4px;margin-bottom:24px;box-shadow:var(--shadow);width:fit-content}
+.tab-nav-btn{padding:9px 24px;background:transparent;border:none;border-radius:var(--r);color:var(--ink-2);font-family:'IBM Plex Sans',sans-serif;font-size:13px;font-weight:400;cursor:pointer;transition:all .18s;white-space:nowrap;display:flex;align-items:center;gap:8px}
+.tab-nav-btn .tic{font-size:14px}
+.tab-nav-btn.active{background:var(--blue);color:#fff;font-weight:500;box-shadow:0 1px 4px rgba(30,64,175,.25)}
+.tab-nav-btn:not(.active):hover{background:var(--bg);color:var(--ink)}
+
+/* ── Tab content ── */
+.tab-content{display:none}
+.tab-content.active{display:block}
+
+/* ── Layout ── */
+.main-grid{display:grid;grid-template-columns:380px 1fr;gap:20px;align-items:start}
+@media(max-width:960px){.main-grid{grid-template-columns:1fr}}
+
+/* ── Panel ── */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:22px;box-shadow:var(--shadow)}
+.panel-head{display:flex;align-items:center;gap:10px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.picon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.pi-blue{background:var(--blue-dim);color:var(--blue)}
+.pi-green{background:var(--green-dim);color:var(--green-mid)}
+.pi-amber{background:var(--amber-dim);color:var(--amber-mid)}
+.pi-violet{background:var(--violet-dim);color:var(--violet-mid)}
+.pi-red{background:var(--red-dim);color:var(--red-mid)}
+.panel-title{font-family:'IBM Plex Sans',sans-serif;font-weight:500;font-size:13px;color:var(--ink)}
+
+/* ── Form ── */
+.sec-label{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);margin:16px 0 9px;display:flex;align-items:center;gap:8px}
+.sec-label::after{content:'';flex:1;height:1px;background:var(--border)}
+.field{margin-bottom:11px}
+label{display:block;font-size:11px;font-weight:500;color:var(--ink-2);margin-bottom:5px}
+.iw{position:relative;display:flex;align-items:center}
+.pfx,.sfx{position:absolute;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-3);pointer-events:none}
+.pfx{left:11px}.sfx{right:11px}
+input[type="number"],select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);color:var(--ink);font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:400;padding:10px 12px;outline:none;transition:border-color .15s,box-shadow .15s,background .15s;-webkit-appearance:none}
+.has-pfx input{padding-left:28px}
+.has-sfx input{padding-right:30px}
+input[type="number"]:focus,select:focus{border-color:var(--blue-mid);box-shadow:0 0 0 3px rgba(59,130,246,.12);background:#fff}
+input[type="number"]:hover:not(:focus),select:hover:not(:focus){border-color:var(--border2)}
+select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23a8a29e'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
+select option{background:#fff;color:#1c1917}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+
+/* ── Comp freq tabs ── */
+.ctabs{display:flex;gap:2px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:3px}
+.ctab{flex:1;padding:7px 2px;background:transparent;border:none;border-radius:4px;color:var(--ink-2);font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:all .15s}
+.ctab.on{background:var(--blue);color:#fff;font-weight:500;box-shadow:0 1px 4px rgba(30,64,175,.25)}
+
+/* ── Button ── */
+.btn{width:100%;padding:12px;background:var(--blue);color:#fff;border:none;border-radius:var(--r);font-family:'IBM Plex Sans',sans-serif;font-weight:500;font-size:13px;letter-spacing:.04em;cursor:pointer;transition:all .15s;margin-top:18px;box-shadow:0 1px 4px rgba(30,64,175,.3)}
+.btn:hover{background:#1e3a8a;box-shadow:0 4px 12px rgba(30,64,175,.3);transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+
+/* ── Right col ── */
+.right-col{display:flex;flex-direction:column;gap:14px}
+
+/* ── Stat cards ── */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media(max-width:1080px){.stat-grid{grid-template-columns:repeat(2,1fr)}}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:16px 18px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.stat::before{content:'';position:absolute;left:0;top:14px;bottom:14px;width:3px;border-radius:0 3px 3px 0}
+.stat.blue::before{background:var(--blue)}
+.stat.green::before{background:var(--green-mid)}
+.stat.amber::before{background:var(--amber-mid)}
+.stat.violet::before{background:var(--violet-mid)}
+.stat.red::before{background:var(--red-mid)}
+.stat-label{font-size:10px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-bottom:7px}
+.stat-value{font-family:'Fraunces',serif;font-weight:300;font-size:clamp(1.15rem,1.7vw,1.6rem);line-height:1;color:var(--ink)}
+.stat.blue .stat-value{color:var(--blue)}
+.stat.green .stat-value{color:var(--green)}
+.stat.amber .stat-value{color:var(--amber-mid)}
+.stat.violet .stat-value{color:var(--violet-mid)}
+.stat.red .stat-value{color:var(--red-mid)}
+.stat-badge{display:inline-block;margin-top:7px;font-family:'IBM Plex Mono',monospace;font-size:10px;padding:2px 7px;border-radius:3px;font-weight:400}
+.stat.blue .stat-badge{background:var(--blue-dim);color:var(--blue);border:1px solid var(--blue-b)}
+.stat.green .stat-badge{background:var(--green-dim);color:var(--green);border:1px solid var(--green-b)}
+.stat.amber .stat-badge{background:var(--amber-dim);color:var(--amber);border:1px solid var(--amber-b)}
+.stat.violet .stat-badge{background:var(--violet-dim);color:var(--violet-mid);border:1px solid var(--violet-b)}
+.stat.red .stat-badge{background:var(--red-dim);color:var(--red);border:1px solid var(--red-b)}
+
+/* ── Charts ── */
+.charts-row{display:grid;grid-template-columns:1fr 280px;gap:14px}
+@media(max-width:680px){.charts-row{grid-template-columns:1fr}}
+.chart-wrap{position:relative;height:230px}
+.chart-wrap-sm{position:relative;height:190px;margin-bottom:10px}
+
+/* ── Pie legend ── */
+.pie-rows{display:flex;flex-direction:column;gap:6px;margin-top:4px}
+.pie-row{display:flex;align-items:center;gap:8px;padding:9px 11px;border-radius:var(--r);border:1px solid var(--border);background:var(--surface2)}
+.pie-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.pie-rl{flex:1;font-size:11px;color:var(--ink-2)}
+.pie-rv{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;color:var(--ink)}
+.pie-rp{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink-3);margin-left:4px}
+
+/* ── Tech grid ── */
+.tech-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+@media(max-width:560px){.tech-grid{grid-template-columns:repeat(2,1fr)}}
+.tc{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:11px 13px}
+.tc-label{font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-3);margin-bottom:5px}
+.tc-val{font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:14px;color:var(--ink)}
+.tc-val.c{color:var(--blue)}.tc-val.g{color:var(--green-mid)}.tc-val.a{color:var(--amber-mid)}.tc-val.v{color:var(--violet-mid)}
+
+/* ── Table ── */
+.table-wrap{max-height:230px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--r);scrollbar-width:thin;scrollbar-color:var(--border2) transparent}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead{position:sticky;top:0;z-index:2}
+thead tr{background:var(--surface2);border-bottom:2px solid var(--border)}
+thead th{padding:8px 11px;text-align:left;font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);font-weight:400}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+tbody tr:hover{background:var(--blue-dim)}
+tbody tr:last-child{border-bottom:none}
+tbody td{padding:7px 11px;color:var(--ink-2);font-family:'IBM Plex Mono',monospace;font-size:11px}
+td.yr{color:var(--ink);font-weight:500}
+td.num{color:var(--ink);font-weight:400}
+td.gr{color:var(--green-mid);font-weight:500}
+td.muted{color:var(--ink-3)}
+
+/* ── Sep ── */
+.sep{height:1px;background:var(--border);margin:14px 0}
+
+/* ─────────────────── LOAN TAB ─────────────────── */
+
+/* Alert / info box */
+.alert{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-radius:var(--r);font-size:11px;line-height:1.5;margin-bottom:14px}
+.alert.green{background:var(--green-dim);border:1px solid var(--green-b);color:var(--green)}
+.alert.amber{background:var(--amber-dim);border:1px solid var(--amber-b);color:var(--amber)}
+.alert.red{background:var(--red-dim);border:1px solid var(--red-b);color:var(--red)}
+.alert.blue{background:var(--blue-dim);border:1px solid var(--blue-b);color:var(--blue)}
+.alert-icon{font-size:14px;flex-shrink:0;margin-top:1px}
+.alert-text strong{display:block;font-weight:600;margin-bottom:2px}
+
+/* Loan stat grid */
+.loan-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+@media(max-width:1000px){.loan-stats{grid-template-columns:repeat(2,1fr)}}
+
+/* Cost breakdown panel */
+.cost-rows{display:flex;flex-direction:column;gap:0}
+.cost-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
+.cost-row:last-child{border-bottom:none}
+.cost-row.total{margin-top:4px;padding-top:12px;border-top:2px solid var(--border2);border-bottom:none}
+.cost-label{font-size:12px;color:var(--ink-2);display:flex;align-items:center;gap:6px}
+.cost-dot{width:7px;height:7px;border-radius:50%}
+.cost-val{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500;color:var(--ink)}
+.cost-val.green{color:var(--green-mid)}
+.cost-val.red{color:var(--red-mid)}
+.cost-val.blue{color:var(--blue)}
+.cost-val.total-val{font-size:16px;font-family:'Fraunces',serif;font-weight:300}
+
+/* LTV meter */
+.ltv-meter{margin:14px 0}
+.ltv-bar-wrap{height:10px;background:var(--bg);border-radius:5px;overflow:hidden;border:1px solid var(--border);margin-top:6px}
+.ltv-bar{height:100%;border-radius:5px;transition:width .5s ease}
+.ltv-labels{display:flex;justify-content:space-between;margin-top:4px;font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--ink-3)}
+
+/* Amort badge */
+.amort-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:var(--r);font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;margin-top:4px}
+
+/* Loan chart */
+.loan-charts-row{display:grid;grid-template-columns:1fr 260px;gap:14px}
+@media(max-width:700px){.loan-charts-row{grid-template-columns:1fr}}
+
+/* Rules info */
+.rules-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+@media(max-width:600px){.rules-grid{grid-template-columns:1fr 1fr}}
+.rule-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px}
+.rule-card-top{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.rule-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.rule-card-title{font-size:10px;font-weight:500;color:var(--ink-2)}
+.rule-card-val{font-family:'Fraunces',serif;font-weight:300;font-size:1.4rem;color:var(--ink);line-height:1}
+.rule-card-sub{font-size:10px;color:var(--ink-3);margin-top:3px}
+
+/* hide spinner */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
+input[type=number]{-moz-appearance:textfield}
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+<!-- HEADER -->
+<div class="header">
+  <div>
+    <div class="eyebrow">Investeringsanalys · Sverige 2026</div>
+    <h1>Finansiell <em>Kalkylator</em></h1>
+    <p class="header-sub">Ränta-på-ränta · Bolåneanalys · Uppdaterade regler april 2026</p>
+  </div>
+  <div class="header-date" id="hdate"></div>
+</div>
+
+<!-- TAB NAVIGATION -->
+<div class="tab-nav">
+  <button class="tab-nav-btn active" onclick="switchTab('compound',this)">
+    <span class="tic">📈</span> Ränta-på-ränta
+  </button>
+  <button class="tab-nav-btn" onclick="switchTab('loan',this)">
+    <span class="tic">🏠</span> Bolånekalkylator
+  </button>
+  <button class="tab-nav-btn" onclick="switchTab('rentbuy',this)">
+    <span class="tic">⚖</span> Hyra vs Äga
+  </button>
+</div>
+
+<!-- ═══════════════ TAB 1: COMPOUND INTEREST ═══════════════ -->
+<div class="tab-content active" id="tab-compound">
+<div class="main-grid">
+
+  <div>
+  <div class="panel">
+    <div class="panel-head"><div class="picon pi-blue">⚙</div><div class="panel-title">Beräkningsparametrar</div></div>
+
+    <div class="sec-label">Kapital &amp; horisont</div>
+    <div class="row2">
+      <div class="field"><label>Startkapital</label><div class="iw has-pfx"><span class="pfx">kr</span><input type="number" id="principal" value="50000" min="0" step="1000"></div></div>
+      <div class="field"><label>Antal år</label><div class="iw has-sfx"><input type="number" id="years" value="20" min="1" max="100" step="1"><span class="sfx">år</span></div></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Årsavkastning</label><div class="iw has-sfx"><input type="number" id="rate" value="7" min="0.01" max="100" step="0.1"><span class="sfx">%</span></div></div>
+      <div class="field"><label>Inflation</label><div class="iw has-sfx"><input type="number" id="inflation" value="2" min="0" max="30" step="0.1"><span class="sfx">%</span></div></div>
+    </div>
+
+    <div class="sec-label">Extra insättningar</div>
+    <div class="row2">
+      <div class="field"><label>Belopp</label><div class="iw has-pfx"><span class="pfx">kr</span><input type="number" id="contrib" value="2000" min="0" step="100"></div></div>
+      <div class="field"><label>Frekvens</label><select id="freq"><option value="12">Månadsvis</option><option value="52">Veckovis</option><option value="365">Dagligen</option><option value="4">Kvartalsvis</option><option value="1">Årsvis</option></select></div>
+    </div>
+
+    <div class="sec-label">Förräntningsfrekvens</div>
+    <div class="ctabs" id="comp-tabs">
+      <button class="ctab on" data-n="12">Månads</button>
+      <button class="ctab" data-n="4">Kvart.</button>
+      <button class="ctab" data-n="52">Vecko</button>
+      <button class="ctab" data-n="365">Daglig</button>
+      <button class="ctab" data-n="1">Årsvis</button>
+    </div>
+
+    <div class="sec-label">Skatt</div>
+    <div class="row2">
+      <div class="field"><label>Skattesats</label><div class="iw has-sfx"><input type="number" id="tax" value="30" min="0" max="100" step="1"><span class="sfx">%</span></div></div>
+      <div class="field"><label>Metod</label><select id="tax-method"><option value="end">Vid uttag (30% vinst)</option><option value="annual">ISK (schablonbeskattning)</option></select></div>
+    </div>
+
+    <button class="btn" onclick="calcCompound()">Beräkna →</button>
+  </div>
+  </div>
+
+  <div class="right-col">
+    <div class="stat-grid">
+      <div class="stat blue"><div class="stat-label">Slutvärde</div><div class="stat-value" id="s-final">—</div><div class="stat-badge" id="s-multi">—</div></div>
+      <div class="stat green"><div class="stat-label">Räntevinst</div><div class="stat-value" id="s-profit">—</div><div class="stat-badge" id="s-profpct">—</div></div>
+      <div class="stat amber"><div class="stat-label">Totalt insatt</div><div class="stat-value" id="s-invested">—</div><div class="stat-badge" id="s-invsub">—</div></div>
+      <div class="stat violet"><div class="stat-label">Realt slutvärde</div><div class="stat-value" id="s-real">—</div><div class="stat-badge" id="s-realsub">—</div></div>
+    </div>
+
+    <div class="charts-row">
+      <div class="panel">
+        <div class="panel-head"><div class="picon pi-blue">📈</div><div class="panel-title">Kapitalets tillväxt</div></div>
+        <div class="chart-wrap"><canvas id="lineChart"></canvas></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div class="picon pi-green">◕</div><div class="panel-title">Kapitalfördelning</div></div>
+        <div class="chart-wrap-sm"><canvas id="pieChart"></canvas></div>
+        <div class="pie-rows" id="pie-legend"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><div class="picon pi-violet">∑</div><div class="panel-title">Teknisk analys</div></div>
+      <div class="tech-grid">
+        <div class="tc"><div class="tc-label">CAGR (effektiv)</div><div class="tc-val c" id="t-cagr">—</div></div>
+        <div class="tc"><div class="tc-label">Real avkastning</div><div class="tc-val g" id="t-real">—</div></div>
+        <div class="tc"><div class="tc-label">Dubblingstid</div><div class="tc-val" id="t-dbl">—</div></div>
+        <div class="tc"><div class="tc-label">Regel 72</div><div class="tc-val v" id="t-r72">—</div></div>
+        <div class="tc"><div class="tc-label">Break-even år</div><div class="tc-val a" id="t-be">—</div></div>
+        <div class="tc"><div class="tc-label">Nuvärde (PV)</div><div class="tc-val" id="t-pv">—</div></div>
+        <div class="tc"><div class="tc-label">Total avkastning</div><div class="tc-val c" id="t-tot">—</div></div>
+        <div class="tc"><div class="tc-label">Räntevinst år 1</div><div class="tc-val g" id="t-yr1">—</div></div>
+        <div class="tc"><div class="tc-label">Kapital-multipel</div><div class="tc-val a" id="t-ratio">—</div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><div class="picon pi-amber">≡</div><div class="panel-title">Årsvis uppdelning</div></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>År</th><th>Kapital</th><th>Insatt</th><th>Räntevinst</th><th>Årsökning</th><th>Realt värde</th></tr></thead>
+          <tbody id="ytable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+</div><!-- /tab-compound -->
+
+<!-- ═══════════════ TAB 2: BOLÅNEKALKYLATOR ═══════════════ -->
+<div class="tab-content" id="tab-loan">
+<div class="main-grid">
+
+  <div>
+  <div class="panel">
+    <div class="panel-head"><div class="picon pi-blue">🏠</div><div class="panel-title">Bolånekalkylator</div></div>
+
+    <!-- Mode switcher -->
+    <div class="ctabs" style="margin-bottom:16px" id="loan-mode-tabs">
+      <button class="ctab on" onclick="switchLoanMode('salary',this)">📊 Från lön → Maxlån</button>
+      <button class="ctab" onclick="switchLoanMode('price',this)">🏠 Från pris → Lönekrav</button>
+    </div>
+
+    <!-- MODE A: Salary input -->
+    <div id="lm-salary">
+      <div class="sec-label">Din lön</div>
+      <div class="row2">
+        <div class="field"><label>Din bruttolön/mån</label><div class="iw has-pfx"><span class="pfx">kr</span><input type="number" id="l-sal-1" value="45000" min="0" step="1000"></div></div>
+        <div class="field"><label>Medsökandes lön/mån</label><div class="iw has-pfx"><span class="pfx">kr</span><input type="number" id="l-sal-2" value="0" min="0" step="1000"></div></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Hushållstyp</label><select id="l-hh-a"><option value="1">Singel</option><option value="2">Par</option></select></div>
+        <div class="field"><label>Barn</label><div class="iw has-sfx"><input type="number" id="l-kids-a" value="0" min="0" max="10" step="1"><span class="sfx">st</span></div></div>
+      </div>
+      <div class="field"><label>Övriga lån/mån (CSN, billån etc.)</label><div class="iw has-pfx"><span class="pfx">kr</span><input type="number" id="l-other-a" value="0" min="0" step="500"></div></div>
+    </div>
+
+    <!-- MODE B: Price input -->
+    <div id="lm-price" style="display:none">
+      <div class="sec-label">Bostadens pris</div>
+      <div class="field"><label>Bostadspris</label><div class="iw has-pfx"><span class="pfx">kr</span><input type="number" id="l-price" value="3500000" min="100000" step="50000" oninput="syncKontant()"></div></div>
+      <div class="row2">
+        <div class="field"><label>Kontantinsats (kr)</label><div class="iw has-pfx"><span class="pfx">kr</span><input type="number" id="l-down-kr" value="350000" min="0" step="10000" oninput="syncPct('kr')"></div></div>
+        <div class="field"><label>Kontantinsats (%)</label><div class="iw has-sfx"><input type="number" id="l-down-pct" value="10" min="0" max="100" step="0.5"><span class="sfx">%</span></div></div>
+      </div>
+      <small id="l-min-warn" style="font-size:10px;color:var(--amber-mid);margin-bottom:10px;display:none">⚠ Min 10% kontantinsats (bolånetak 90%)</small>
+      <div class="row2">
+        <div class="field"><label>Hushållstyp</label><select id="l-hh-b"><option value="1">Singel</option><option value="2">Par</option></select></div>
+        <div class="field"><label>Barn</label><div class="iw has-sfx"><input type="number" id="l-kids-b" value="0" min="0" max="10" step="1"><span class="sfx">st</span></div></div>
+      </div>
+      <div class="field"><label>Övriga lån/mån (CSN, billån etc.)</label><div class="iw has-pfx"><span class="pfx">kr</span><input type="number" id="l-other-b" value="0" min="0" step="500"></div></div>
+    </div>
+
+    <div class="sep"></div>
+    <div class="sec-label">Standardinställningar (redigerbara)</div>
+    <div class="row2">
+      <div class="field"><label>Bolåneränta (nu ~2.65%)</label><div class="iw has-sfx"><input type="number" id="l-rate" value="2.65" min="0.1" max="20" step="0.05"><span class="sfx">%</span></div></div>
+      <div class="field"><label>Kalkylränta / stress</label><div class="iw has-sfx"><input type="number" id="l-stress" value="6.5" min="1" max="15" step="0.25"><span class="sfx">%</span></div></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Lånetid</label><div class="iw has-sfx"><input type="number" id="l-term" value="30" min="5" max="50" step="5"><span class="sfx">år</span></div></div>
+      <div class="field"><label>BRF-avgift/mån</label><div class="iw has-pfx"><span class="pfx">kr</span><input type="number" id="l-fee" value="3500" min="0" step="100"></div></div>
+    </div>
+
+    <button class="btn" id="loan-btn" onclick="calcLoan()">Beräkna →</button>
+  </div>
+
+  <!-- Rules summary -->
+  <div class="panel" style="margin-top:14px">
+    <div class="panel-head"><div class="picon pi-amber">⚖</div><div class="panel-title">Gällande regler (april 2026)</div></div>
+    <div class="rules-grid">
+      <div class="rule-card">
+        <div class="rule-card-top"><div class="rule-dot" style="background:var(--blue)"></div><div class="rule-card-title">Bolånetak</div></div>
+        <div class="rule-card-val">90%</div>
+        <div class="rule-card-sub">Max av bostadens värde · Kontantinsats min 10%</div>
+      </div>
+      <div class="rule-card">
+        <div class="rule-card-top"><div class="rule-dot" style="background:var(--green-mid)"></div><div class="rule-card-title">Amortering >70%</div></div>
+        <div class="rule-card-val">2%/år</div>
+        <div class="rule-card-sub">Av lånebeloppet · Lag 2026:226</div>
+      </div>
+      <div class="rule-card">
+        <div class="rule-card-top"><div class="rule-dot" style="background:var(--amber-mid)"></div><div class="rule-card-title">Amortering 50–70%</div></div>
+        <div class="rule-card-val">1%/år</div>
+        <div class="rule-card-sub">Under 50% belåning: inget krav</div>
+      </div>
+      <div class="rule-card">
+        <div class="rule-card-top"><div class="rule-dot" style="background:var(--violet-mid)"></div><div class="rule-card-title">Ränteavdrag</div></div>
+        <div class="rule-card-val">30%</div>
+        <div class="rule-card-sub">Upp till 100 000 kr ränta · 21% däröver</div>
+      </div>
+      <div class="rule-card">
+        <div class="rule-card-top"><div class="rule-dot" style="background:var(--green-mid)"></div><div class="rule-card-title">Skärpt krav</div></div>
+        <div class="rule-card-val">Borttaget</div>
+        <div class="rule-card-sub">Inget extra krav vid hög skuldkvot</div>
+      </div>
+      <div class="rule-card">
+        <div class="rule-card-top"><div class="rule-dot" style="background:var(--ink-3)"></div><div class="rule-card-title">Snittränta (rörlig)</div></div>
+        <div class="rule-card-val">~2.65%</div>
+        <div class="rule-card-sub">Riksbanken: 1.75% (mars 2026)</div>
+      </div>
+    </div>
+  </div>
+
+  </div><!-- /left col -->
+
+  <!-- RIGHT -->
+  <div class="right-col" id="loan-right">
+
+    <!-- Stockholm reference panel -->
+    <div class="panel">
+      <div class="panel-head"><div class="picon pi-violet">📍</div><div class="panel-title">Stockholms kvm-priser — referens (mars 2026)</div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+        <div class="tc" style="border-left:3px solid var(--violet-mid)">
+          <div class="tc-label">Östermalm</div>
+          <div class="tc-val v">~150 000</div>
+          <div style="font-size:9px;color:var(--ink-3);margin-top:2px">kr/kvm · 2:a 55kvm ≈ 8.3 Mkr</div>
+        </div>
+        <div class="tc" style="border-left:3px solid var(--blue)">
+          <div class="tc-label">Centrala innerstaden snitt</div>
+          <div class="tc-val c">~119 000</div>
+          <div style="font-size:9px;color:var(--ink-3);margin-top:2px">kr/kvm · 2:a 55kvm ≈ 6.5 Mkr</div>
+        </div>
+        <div class="tc" style="border-left:3px solid var(--green-mid)">
+          <div class="tc-label">Hela Stockholm snitt</div>
+          <div class="tc-val g">~65 000</div>
+          <div style="font-size:9px;color:var(--ink-3);margin-top:2px">kr/kvm · 2:a 55kvm ≈ 3.6 Mkr</div>
+        </div>
+        <div class="tc" style="border-left:3px solid var(--amber-mid)">
+          <div class="tc-label">Prisuppgång årstakt (centralt)</div>
+          <div class="tc-val a">+6%</div>
+          <div style="font-size:9px;color:var(--ink-3);margin-top:2px">mars 2026, Sv. Mäklarstatistik</div>
+        </div>
+      </div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-3);margin-bottom:8px">Typisk 2:a (55 kvm) — bolån + amortering + avdrag/mån</div>
+      <div class="cost-rows">
+        <div class="cost-row" style="padding:7px 0"><span class="cost-label"><span class="cost-dot" style="background:var(--violet-mid)"></span>Östermalm (~8.3 Mkr, 10% KI)</span><span class="cost-val" style="color:var(--violet-mid)">~21 000 kr/mån</span></div>
+        <div class="cost-row" style="padding:7px 0"><span class="cost-label"><span class="cost-dot" style="background:var(--blue)"></span>Innerstad (~6.5 Mkr, 10% KI)</span><span class="cost-val blue">~16 500 kr/mån</span></div>
+        <div class="cost-row" style="padding:7px 0"><span class="cost-label"><span class="cost-dot" style="background:var(--green-mid)"></span>Ytterstad (~3.6 Mkr, 10% KI)</span><span class="cost-val green">~9 200 kr/mån</span></div>
+        <div class="cost-row" style="padding:7px 0;border-bottom:none"><span class="cost-label"><span class="cost-dot" style="background:var(--ink-3)"></span>+ BRF-avgift tillkommer</span><span class="cost-val muted" style="color:var(--ink-2)">+3 000–6 000 kr</span></div>
+      </div>
+      <div style="margin-top:10px;padding:8px 10px;background:var(--blue-dim);border:1px solid var(--blue-b);border-radius:var(--r);font-size:10px;color:var(--blue);line-height:1.5">
+        Beräknat: 2.65% ränta · 2% amortering · 30% ränteavdrag · exkl. el/internet/försäkring (~1 000 kr/mån).
+      </div>
+    </div>
+
+    <!-- Loan status alert -->
+    <div id="loan-alert" class="alert blue"><span class="alert-icon">ℹ</span><div class="alert-text"><strong>Fyll i parametrarna</strong>Klicka på "Beräkna bolån" för att se din bolåneanalys.</div></div>
+
+    <!-- Loan stat cards -->
+    <div class="loan-stats">
+      <div class="stat blue"><div class="stat-label">Bolånebelopp</div><div class="stat-value" id="l-loan-amt">—</div><div class="stat-badge" id="l-ltv-badge">—</div></div>
+      <div class="stat amber"><div class="stat-label">Amortering/mån</div><div class="stat-value" id="l-amort">—</div><div class="stat-badge" id="l-amort-pct">—</div></div>
+      <div class="stat red"><div class="stat-label">Total månadskostnad</div><div class="stat-value" id="l-monthly">—</div><div class="stat-badge" id="l-monthly-sub">—</div></div>
+      <div class="stat green"><div class="stat-label">Krav bruttolön</div><div class="stat-value" id="l-salary">—</div><div class="stat-badge" id="l-salary-sub">—</div></div>
+    </div>
+
+    <!-- LTV meter -->
+    <div class="panel">
+      <div class="panel-head"><div class="picon pi-blue">◎</div><div class="panel-title">Belåningsgrad</div></div>
+      <div class="ltv-meter">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-2)">Belåningsgrad (LTV)</span>
+          <span style="font-family:'Fraunces',serif;font-size:1.4rem;font-weight:300;color:var(--ink)" id="l-ltv-pct">—</span>
+        </div>
+        <div class="ltv-bar-wrap"><div class="ltv-bar" id="l-ltv-bar" style="width:0%;background:var(--green-mid)"></div></div>
+        <div class="ltv-labels"><span>0%</span><span>50%</span><span style="color:var(--amber-mid)">70%</span><span style="color:var(--red-mid)">90%</span><span>100%</span></div>
+      </div>
+      <div id="l-amort-info" style="font-size:11px;color:var(--ink-2);margin-top:6px"></div>
+    </div>
+
+    <!-- Monthly cost breakdown + charts -->
+    <div class="loan-charts-row">
+      <div class="panel">
+        <div class="panel-head"><div class="picon pi-red">💰</div><div class="panel-title">Månadskostnad</div></div>
+        <div class="cost-rows">
+          <div class="cost-row"><span class="cost-label"><span class="cost-dot" style="background:var(--blue)"></span>Räntekostnad (brutto)</span><span class="cost-val blue" id="lc-interest">—</span></div>
+          <div class="cost-row"><span class="cost-label"><span class="cost-dot" style="background:var(--green-mid)"></span>Ränteavdrag (–30%)</span><span class="cost-val green" id="lc-deduction">—</span></div>
+          <div class="cost-row"><span class="cost-label"><span class="cost-dot" style="background:var(--blue)"></span>Räntekostnad (efter avdrag)</span><span class="cost-val blue" id="lc-net-interest">—</span></div>
+          <div class="cost-row"><span class="cost-label"><span class="cost-dot" style="background:var(--amber-mid)"></span>Amortering</span><span class="cost-val" id="lc-amort2">—</span></div>
+          <div class="cost-row total"><span class="cost-label" style="font-weight:600;color:var(--ink)">Total kostnad/månad</span><span class="cost-val total-val red" id="lc-total">—</span></div>
+        </div>
+        <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
+          <div style="font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-3);font-family:'IBM Plex Mono',monospace;margin-bottom:8px">Stresstest vid kalkylränta</div>
+          <div class="cost-rows">
+            <div class="cost-row" style="padding:6px 0"><span class="cost-label">Ränta vid <span id="lc-stress-rate-lbl">6.5%</span></span><span class="cost-val red" id="lc-stress">—</span></div>
+            <div class="cost-row" style="padding:6px 0;border-bottom:none"><span class="cost-label">Total vid stresstest</span><span class="cost-val red" id="lc-stress-total">—</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><div class="picon pi-amber">◕</div><div class="panel-title">Kostnadsmix</div></div>
+        <div class="chart-wrap-sm"><canvas id="loanPie"></canvas></div>
+        <div class="pie-rows" id="loan-pie-legend"></div>
+      </div>
+    </div>
+
+    <!-- Amortization chart -->
+    <div class="panel">
+      <div class="panel-head"><div class="picon pi-blue">📊</div><div class="panel-title">Skuldavveckling &amp; räntekostnad</div></div>
+      <div class="chart-wrap"><canvas id="loanLine"></canvas></div>
+    </div>
+
+    <!-- Salary breakdown -->
+    <div class="panel">
+      <div class="panel-head"><div class="picon pi-green">👤</div><div class="panel-title">Lönekrav &amp; KALP</div></div>
+      <div class="tech-grid">
+        <div class="tc"><div class="tc-label">Bruttolön/mån</div><div class="tc-val c" id="lt-gross">—</div></div>
+        <div class="tc"><div class="tc-label">Nettolön/mån (~68%)</div><div class="tc-val" id="lt-net">—</div></div>
+        <div class="tc"><div class="tc-label">Bolånekostn. (stress)</div><div class="tc-val" id="lt-stress-cost">—</div></div>
+        <div class="tc"><div class="tc-label">KALP-krav (levnad)</div><div class="tc-val a" id="lt-kalp">—</div></div>
+        <div class="tc"><div class="tc-label">Kvar efter allt</div><div class="tc-val g" id="lt-left">—</div></div>
+        <div class="tc"><div class="tc-label">Skuldkvot (lön/lån)</div><div class="tc-val v" id="lt-ratio">—</div></div>
+      </div>
+    </div>
+
+    <!-- 10-year scenario panel -->
+    <div class="panel">
+      <div class="panel-head"><div class="picon pi-amber">🔭</div><div class="panel-title">Scenarioanalys — tre räntenivåer</div></div>
+      <div style="font-size:10px;color:var(--ink-3);margin-bottom:14px;line-height:1.5">
+        Vad händer med din månadskostnad och totala räntekostnad om räntan förändras? Baserat på ditt beräknade lånbelopp.
+      </div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead>
+            <tr style="background:var(--surface2);border-bottom:2px solid var(--border)">
+              <th style="padding:9px 12px;text-align:left;font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);font-weight:400">Ränta</th>
+              <th style="padding:9px 12px;text-align:right;font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);font-weight:400">Ränta/mån</th>
+              <th style="padding:9px 12px;text-align:right;font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);font-weight:400">Netto (avdrag)</th>
+              <th style="padding:9px 12px;text-align:right;font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);font-weight:400">+ Amortering</th>
+              <th style="padding:9px 12px;text-align:right;font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);font-weight:400">Total/mån</th>
+              <th style="padding:9px 12px;text-align:right;font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);font-weight:400">Total ränta 30 år</th>
+            </tr>
+          </thead>
+          <tbody id="scenario-table"></tbody>
+        </table>
+      </div>
+      <div style="margin-top:12px">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-3);margin-bottom:8px">Eget kapital byggt efter 5 / 10 / 20 år vid nuvarande ränta</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+          <div class="tc">
+            <div class="tc-label">Eget kapital år 5</div>
+            <div class="tc-val g" id="sc-eq5">—</div>
+            <div style="font-size:9px;color:var(--ink-3);margin-top:2px" id="sc-eq5-pct">—</div>
+          </div>
+          <div class="tc">
+            <div class="tc-label">Eget kapital år 10</div>
+            <div class="tc-val g" id="sc-eq10">—</div>
+            <div style="font-size:9px;color:var(--ink-3);margin-top:2px" id="sc-eq10-pct">—</div>
+          </div>
+          <div class="tc">
+            <div class="tc-label">Eget kapital år 20</div>
+            <div class="tc-val g" id="sc-eq20">—</div>
+            <div style="font-size:9px;color:var(--ink-3);margin-top:2px" id="sc-eq20-pct">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Price history chart -->
+    <div class="panel">
+      <div class="panel-head"><div class="picon pi-violet">📍</div><div class="panel-title">Prisutveckling 2000–2026 · kr/kvm</div></div>
+      <div style="font-size:10px;color:var(--ink-3);margin-bottom:12px;line-height:1.6">
+        Uppskattade kvadratmeterpriser (bostadsrätter) baserade på Svensk Mäklarstatistik, SCB och Boio. Östermalm, Danderyd och Lidingö: innerstads-/villakommuner. Skaftö (Lysekil): fritidshus/skärgårdsmarknad med covid-boost 2020–2021.
+      </div>
+      <div class="chart-wrap" style="height:300px"><canvas id="priceHistoryChart"></canvas></div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px">
+        <div class="tc" style="border-left:3px solid #7c3aed">
+          <div class="tc-label">Östermalm 2026</div>
+          <div class="tc-val v">~150 000</div>
+          <div style="font-size:9px;color:var(--ink-3);margin-top:2px">kr/kvm · +640% sedan 2000</div>
+        </div>
+        <div class="tc" style="border-left:3px solid #1e40af">
+          <div class="tc-label">Danderyd 2026</div>
+          <div class="tc-val c">~95 000</div>
+          <div style="font-size:9px;color:var(--ink-3);margin-top:2px">kr/kvm · +580% sedan 2000</div>
+        </div>
+        <div class="tc" style="border-left:3px solid #059669">
+          <div class="tc-label">Lidingö 2026</div>
+          <div class="tc-val g">~80 000</div>
+          <div style="font-size:9px;color:var(--ink-3);margin-top:2px">kr/kvm · +520% sedan 2000</div>
+        </div>
+        <div class="tc" style="border-left:3px solid #d97706">
+          <div class="tc-label">Skaftö 2026</div>
+          <div class="tc-val a">~45 000</div>
+          <div style="font-size:9px;color:var(--ink-3);margin-top:2px">kr/kvm · +800% sedan 2000</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Investment vs Property comparison -->
+    <div class="panel">
+      <div class="panel-head"><div class="picon pi-green">📊</div><div class="panel-title">Bostad vs Aktier — historisk jämförelse sedan 2000</div></div>
+      <div style="font-size:10px;color:var(--ink-3);margin-bottom:12px;line-height:1.6">
+        En investering på 500 000 kr år 2000 — vad hade den blivit? Jämförelse: OMXS30 (Stockholmsbörsen), Östermalm bostadsrätt (55 kvm, 10% KI), global indexfond (~MSCI World) och statsobligationer.
+      </div>
+
+      <!-- Input row -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px">
+        <div class="field">
+          <label>Startkapital år 2000</label>
+          <div class="iw has-pfx"><span class="pfx">kr</span>
+            <input type="number" id="inv-start" value="500000" min="10000" step="10000" oninput="drawInvestChart()">
+          </div>
+        </div>
+        <div class="field">
+          <label>Startår</label>
+          <div class="iw">
+            <select id="inv-year" onchange="drawInvestChart()">
+              <option value="0">2000</option><option value="4">2004</option>
+              <option value="8">2008</option><option value="10">2010</option>
+              <option value="15">2015</option><option value="20">2020</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>Visa som</label>
+          <div class="iw">
+            <select id="inv-mode" onchange="drawInvestChart()">
+              <option value="abs">Totalt värde (kr)</option>
+              <option value="pct">Procentuell avkastning</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-wrap" style="height:300px"><canvas id="investChart"></canvas></div>
+
+      <!-- Summary cards -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px" id="inv-cards">
+        <div class="tc" style="border-left:3px solid #7c3aed">
+          <div class="tc-label">Östermalm (55kvm)</div>
+          <div class="tc-val v" id="ic-prop">—</div>
+          <div style="font-size:9px;color:var(--ink-3);margin-top:2px" id="ic-prop-pct">—</div>
+        </div>
+        <div class="tc" style="border-left:3px solid #1e40af">
+          <div class="tc-label">OMXS30</div>
+          <div class="tc-val c" id="ic-omx">—</div>
+          <div style="font-size:9px;color:var(--ink-3);margin-top:2px" id="ic-omx-pct">—</div>
+        </div>
+        <div class="tc" style="border-left:3px solid #059669">
+          <div class="tc-label">MSCI World (index)</div>
+          <div class="tc-val g" id="ic-msci">—</div>
+          <div style="font-size:9px;color:var(--ink-3);margin-top:2px" id="ic-msci-pct">—</div>
+        </div>
+        <div class="tc" style="border-left:3px solid #d97706">
+          <div class="tc-label">Statsobligationer</div>
+          <div class="tc-val a" id="ic-bond">—</div>
+          <div style="font-size:9px;color:var(--ink-3);margin-top:2px" id="ic-bond-pct">—</div>
+        </div>
+      </div>
+      <div style="margin-top:12px;padding:9px 12px;background:var(--amber-dim);border:1px solid var(--amber-b);border-radius:var(--r);font-size:10px;color:var(--amber);line-height:1.6">
+        <strong>OBS:</strong> Bostadsinvesteringen är justerad för bolånerränta, amortering och BRF-avgift (4 000 kr/mån) — det är avkastningen på eget kapital (kontantinsatsen) som visas, inte råprisstegringen. OMXS30 inkluderar utdelningar (total return). Historisk avkastning garanterar inte framtida resultat.
+      </div>
+    </div>
+
+  </div>
+</div>
+</div><!-- /tab-loan -->
+
+<!-- ═══════════════ TAB 3: HYRA VS ÄGA ═══════════════ -->
+<div class="tab-content" id="tab-rentbuy">
+<div class="main-grid">
+
+  <!-- LEFT INPUT -->
+  <div>
+  <div class="panel">
+    <div class="panel-head"><div class="picon pi-violet">⚖</div><div class="panel-title">Hyra vs Äga — parametrar</div></div>
+
+    <div class="sec-label">Bostadens värde</div>
+    <div class="field"><label>Bostadspris (köp)</label><div class="iw has-pfx"><span class="pfx">kr</span><input type="number" id="rb-price" value="3500000" min="100000" step="50000"></div></div>
+    <div class="row2">
+      <div class="field"><label>Kontantinsats</label><div class="iw has-sfx"><input type="number" id="rb-down-pct" value="10" min="5" max="100" step="1"><span class="sfx">%</span></div></div>
+      <div class="field"><label>Bostadsprisökning/år</label><div class="iw has-sfx"><input type="number" id="rb-appreciation" value="3" min="-5" max="15" step="0.5"><span class="sfx">%</span></div></div>
+    </div>
+
+    <div class="sec-label">Ägandekostnader</div>
+    <div class="row2">
+      <div class="field"><label>Bolåneränta</label><div class="iw has-sfx"><input type="number" id="rb-rate" value="2.65" min="0.5" max="15" step="0.05"><span class="sfx">%</span></div></div>
+      <div class="field"><label>BRF-avgift/mån</label><div class="iw has-pfx"><span class="pfx">kr</span><input type="number" id="rb-fee" value="4000" min="0" step="100"></div></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Driftkostnad/mån</label><div class="iw has-pfx"><span class="pfx">kr</span><input type="number" id="rb-drift" value="1000" min="0" step="100"></div></div>
+      <div class="field"><label>Underhåll/år (% av värde)</label><div class="iw has-sfx"><input type="number" id="rb-maint" value="0.5" min="0" max="3" step="0.1"><span class="sfx">%</span></div></div>
+    </div>
+
+    <div class="sec-label">Hyresalternativet</div>
+    <div class="row2">
+      <div class="field"><label>Hyra/månad</label><div class="iw has-pfx"><span class="pfx">kr</span><input type="number" id="rb-rent" value="12000" min="1000" step="500"></div></div>
+      <div class="field"><label>Hyreshöjning/år</label><div class="iw has-sfx"><input type="number" id="rb-rentrise" value="2" min="0" max="10" step="0.5"><span class="sfx">%</span></div></div>
+    </div>
+
+    <div class="sec-label">Investering &amp; tidhorisont</div>
+    <div class="row2">
+      <div class="field"><label>Investeringsavkastning</label><div class="iw has-sfx"><input type="number" id="rb-inv-rate" value="7" min="0" max="20" step="0.5"><span class="sfx">%</span></div></div>
+      <div class="field"><label>Antal år</label><div class="iw has-sfx"><input type="number" id="rb-years" value="20" min="1" max="50" step="1"><span class="sfx">år</span></div></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Inflation</label><div class="iw has-sfx"><input type="number" id="rb-inflation" value="2" min="0" max="10" step="0.5"><span class="sfx">%</span></div></div>
+      <div class="field"><label>Reavinstskatt (22%)</label><div class="iw has-sfx"><input type="number" id="rb-cgt" value="22" min="0" max="30" step="1"><span class="sfx">%</span></div></div>
+    </div>
+
+    <button class="btn" onclick="calcRentBuy()">Jämför →</button>
+  </div>
+
+  <div class="panel" style="margin-top:14px;background:var(--amber-dim);border-color:var(--amber-b)">
+    <div style="font-size:10px;color:var(--amber);font-weight:500;margin-bottom:8px">⚠ Viktiga antaganden</div>
+    <div style="font-size:11px;color:var(--amber);line-height:1.7">
+      • Hyresalternativet: kontantinsatsen + månatlig kostnadsskillnad (äga minus hyra) investeras i aktier/fonder.<br>
+      • Reavinstskatt (22%) vid bostadsförsäljning betalas av ägaren.<br>
+      • Amortering räknas som sparande (bygger eget kapital).<br>
+      • Inga mäklararvodeskostnader inkluderade (~2% vid försäljning).
+    </div>
+  </div>
+  </div>
+
+  <!-- RIGHT RESULTS -->
+  <div class="right-col">
+
+    <!-- Winner banner -->
+    <div id="rb-banner" class="alert blue"><span class="alert-icon">⚖</span><div class="alert-text"><strong>Fyll i parametrarna och klicka Jämför</strong>Analysen visar vilket alternativ som ger bäst ekonomiskt utfall efter ditt antal år.</div></div>
+
+    <!-- Summary cards -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="panel" style="border-top:3px solid var(--blue)">
+        <div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--blue);font-weight:500;margin-bottom:12px;font-family:'IBM Plex Mono',monospace">🏠 Äga — nettoförmögenhet</div>
+        <div style="font-family:'Fraunces',serif;font-weight:300;font-size:clamp(1.3rem,2vw,1.9rem);color:var(--blue)" id="rb-own-wealth">—</div>
+        <div style="font-size:10px;color:var(--ink-3);margin-top:6px" id="rb-own-sub">—</div>
+        <div class="sep"></div>
+        <div style="display:flex;flex-direction:column;gap:6px" id="rb-own-detail"></div>
+      </div>
+      <div class="panel" style="border-top:3px solid var(--green-mid)">
+        <div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--green);font-weight:500;margin-bottom:12px;font-family:'IBM Plex Mono',monospace">📈 Hyra + Investera — nettoförmögenhet</div>
+        <div style="font-family:'Fraunces',serif;font-weight:300;font-size:clamp(1.3rem,2vw,1.9rem);color:var(--green)" id="rb-rent-wealth">—</div>
+        <div style="font-size:10px;color:var(--ink-3);margin-top:6px" id="rb-rent-sub">—</div>
+        <div class="sep"></div>
+        <div style="display:flex;flex-direction:column;gap:6px" id="rb-rent-detail"></div>
+      </div>
+    </div>
+
+    <!-- Main chart -->
+    <div class="panel">
+      <div class="panel-head"><div class="picon pi-blue">📊</div><div class="panel-title">Förmögenhetsutveckling — Äga vs Hyra+Investera</div></div>
+      <div class="chart-wrap" style="height:260px"><canvas id="rbLineChart"></canvas></div>
+    </div>
+
+    <!-- Monthly cost comparison -->
+    <div class="panel">
+      <div class="panel-head"><div class="picon pi-amber">💰</div><div class="panel-title">Månadskostnad år för år</div></div>
+      <div class="chart-wrap" style="height:200px"><canvas id="rbCostChart"></canvas></div>
+    </div>
+
+    <!-- Break-even + tech stats -->
+    <div class="panel">
+      <div class="panel-head"><div class="picon pi-green">∑</div><div class="panel-title">Nyckeltal</div></div>
+      <div class="tech-grid">
+        <div class="tc"><div class="tc-label">Break-even år</div><div class="tc-val c" id="rb-breakeven">—</div></div>
+        <div class="tc"><div class="tc-label">Äga — total kostnad</div><div class="tc-val a" id="rb-own-cost">—</div></div>
+        <div class="tc"><div class="tc-label">Hyra — total kostnad</div><div class="tc-val g" id="rb-rent-cost">—</div></div>
+        <div class="tc"><div class="tc-label">Bostadsvinst (brutto)</div><div class="tc-val c" id="rb-gain">—</div></div>
+        <div class="tc"><div class="tc-label">Investerad diff. totalt</div><div class="tc-val g" id="rb-inv-total">—</div></div>
+        <div class="tc"><div class="tc-label">Skillnad i förmögenhet</div><div class="tc-val v" id="rb-diff">—</div></div>
+      </div>
+    </div>
+
+    <!-- Year-by-year table -->
+    <div class="panel">
+      <div class="panel-head"><div class="picon pi-violet">≡</div><div class="panel-title">Årsvis jämförelse</div></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>År</th>
+            <th>Äga — kostnad/mån</th>
+            <th>Hyra — kostnad/mån</th>
+            <th>Diff/mån</th>
+            <th>Äga — nettoförmögenhet</th>
+            <th>Hyra — portfölj</th>
+          </tr></thead>
+          <tbody id="rb-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div><!-- /tab-rentbuy -->
+
+</div><!-- /wrapper -->
+
+<script>
+// ── Date ──
+document.getElementById('hdate').textContent =
+  new Date().toLocaleDateString('sv-SE',{year:'numeric',month:'long',day:'numeric'});
+
+// ── Tab switching ──
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── Formatters ──
+const SEK = n => new Intl.NumberFormat('sv-SE',{style:'currency',currency:'SEK',maximumFractionDigits:0}).format(n);
+const PCT = (n,d=2) => (n>=0?'+':'')+n.toFixed(d)+'%';
+const N2  = n => new Intl.NumberFormat('sv-SE',{maximumFractionDigits:0}).format(n);
+
+// ─────────────────── COMPOUND INTEREST ───────────────────
+let compN=12, lChart=null, pChart=null;
+
+document.querySelectorAll('.ctab').forEach(b => {
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('.ctab').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on'); compN=parseInt(b.dataset.n);
+  });
+});
+
+function calcCompound(){
+  const P=parseFloat(document.getElementById('principal').value)||0;
+  const Y=parseInt(document.getElementById('years').value)||20;
+  const rAnn=parseFloat(document.getElementById('rate').value)/100;
+  const inf=parseFloat(document.getElementById('inflation').value)/100;
+  const cAmt=parseFloat(document.getElementById('contrib').value)||0;
+  const cFreq=parseInt(document.getElementById('freq').value);
+  const taxR=parseFloat(document.getElementById('tax').value)/100;
+  const taxM=document.getElementById('tax-method').value;
+  const n=compN;
+  const rPer=rAnn/n, cPer=cAmt/n*cFreq;
+
+  // ISK schablonbeskattning: statslåneränta (nov föregående år) + 1 pp, × 30%
+  // Skattefritt under 200 000 kr. Vi använder ~3.5% som schablonränta (aktuellt 2026).
+  const iskSchablonRate = 0.035; // statslåneränta + 1 pp, beskattad andel av saldot
+  const iskExemption    = 200000; // skattefritt belopp
+
+  const yrs=[],bals=[],invs=[],reals=[];
+  let bal=P,totalInv=P;
+  for(let y=0;y<=Y;y++){
+    if(y===0){yrs.push(0);bals.push(P);invs.push(P);reals.push(P);continue}
+    const prev=bal;
+    for(let p=0;p<n;p++){bal=bal*(1+rPer)+cPer;totalInv+=cPer}
+    if(taxM==='annual'){
+      // ISK: schablonbeskattning på saldot över 200 000 kr
+      const taxableBase = Math.max(0, bal - iskExemption);
+      const iskTax = taxableBase * iskSchablonRate * 0.30;
+      bal -= iskTax;
+    }
+    yrs.push(y);bals.push(Math.round(bal));invs.push(Math.round(totalInv));
+    reals.push(Math.round(bal/Math.pow(1+inf,y)));
+  }
+  const finalBal=bals[bals.length-1],finalInv=invs[invs.length-1];
+  const profit=finalBal-finalInv,finalReal=reals[reals.length-1];
+  const multiple=(finalBal/(finalInv||1)).toFixed(2);
+  let afterTax=taxM==='annual'?finalBal:finalInv+Math.max(0,profit)*(1-taxR);
+  const realRate=((1+rAnn)/(1+inf)-1)*100;
+  const cagr=(Math.pow(finalBal/(P||1),1/Y)-1)*100;
+  const dbl=Math.log(2)/Math.log(1+rAnn),r72=72/(rAnn*100);
+  let be='—';for(let i=1;i<bals.length;i++){if(bals[i]>invs[i]){be='År '+yrs[i];break}}
+  const pv=finalBal/Math.pow(1+rAnn,Y),yr1=bals[1]-invs[1];
+  const totRet=((finalBal-finalInv)/(finalInv||1))*100;
+
+  document.getElementById('s-final').textContent=SEK(finalBal);
+  document.getElementById('s-multi').textContent=multiple+'× insatt';
+  document.getElementById('s-profit').textContent=SEK(Math.max(0,profit));
+  document.getElementById('s-profpct').textContent=PCT(totRet,1)+' på insatt';
+  document.getElementById('s-invested').textContent=SEK(finalInv);
+  const fn={12:'mån',52:'vecka',365:'dag',4:'kv',1:'år'};
+  document.getElementById('s-invsub').textContent=cAmt>0?'+'+SEK(cAmt)+'/'+fn[cFreq]:'Engångsinvestering';
+  document.getElementById('s-real').textContent=SEK(finalReal);
+  document.getElementById('s-realsub').textContent='Inflation '+(inf*100).toFixed(1)+'%';
+  document.getElementById('t-cagr').textContent=PCT(cagr);
+  document.getElementById('t-real').textContent=PCT(realRate);
+  document.getElementById('t-dbl').textContent=dbl.toFixed(1)+' år';
+  document.getElementById('t-r72').textContent=r72.toFixed(1)+' år';
+  document.getElementById('t-be').textContent=be;
+  document.getElementById('t-pv').textContent=SEK(Math.round(pv));
+  document.getElementById('t-tot').textContent=PCT(totRet,1);
+  document.getElementById('t-yr1').textContent=SEK(yr1);
+  document.getElementById('t-ratio').textContent=(finalBal/(P||1)).toFixed(2)+'×';
+  const p1=((finalInv/finalBal)*100).toFixed(1),p2=(Math.max(0,profit)/finalBal*100).toFixed(1);
+  document.getElementById('pie-legend').innerHTML=`
+    <div class="pie-row"><div class="pie-dot" style="background:var(--amber-mid)"></div><div class="pie-rl">Insatt kapital</div><div class="pie-rv">${SEK(finalInv)}</div><div class="pie-rp">${p1}%</div></div>
+    <div class="pie-row"><div class="pie-dot" style="background:var(--green-mid)"></div><div class="pie-rl">Räntevinst</div><div class="pie-rv">${SEK(Math.max(0,profit))}</div><div class="pie-rp">${p2}%</div></div>`;
+  const tb=document.getElementById('ytable');tb.innerHTML='';
+  for(let i=0;i<=Y;i++){
+    const prev=i>0?bals[i-1]:P,inc=bals[i]-prev;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td class="yr">${i===0?'Start':i}</td><td class="num">${SEK(bals[i])}</td><td class="muted">${SEK(invs[i])}</td><td class="${i>0?'gr':'muted'}">${i===0?'—':'+'+SEK(bals[i]-invs[i])}</td><td class="${i>0&&inc>0?'gr':'muted'}">${i===0?'—':'+'+SEK(inc)}</td><td class="muted">${SEK(reals[i])}</td>`;
+    tb.appendChild(tr);
+  }
+  drawCompLine(yrs,bals,invs,reals);
+  drawCompPie([finalInv,Math.max(0,profit)]);
+}
+
+function drawCompLine(yrs,vals,inv,real){
+  if(lChart)lChart.destroy();
+  const ctx=document.getElementById('lineChart').getContext('2d');
+  const gB=ctx.createLinearGradient(0,0,0,230);gB.addColorStop(0,'rgba(30,64,175,.14)');gB.addColorStop(1,'rgba(30,64,175,0)');
+  const gG=ctx.createLinearGradient(0,0,0,230);gG.addColorStop(0,'rgba(5,150,105,.10)');gG.addColorStop(1,'rgba(5,150,105,0)');
+  const lbls=yrs.map(y=>{if(yrs.length>30)return y%10===0?`År ${y}`:'';if(yrs.length>15)return y%5===0?`År ${y}`:'';return y===0?'Nu':`År ${y}`});
+  lChart=new Chart(ctx,{type:'line',data:{labels:lbls,datasets:[
+    {label:'Slutvärde',data:vals,borderColor:'#1e40af',backgroundColor:gB,borderWidth:2,pointRadius:0,pointHoverRadius:5,pointHoverBackgroundColor:'#1e40af',fill:true,tension:.4},
+    {label:'Insatt kapital',data:inv,borderColor:'#d97706',backgroundColor:'transparent',borderWidth:1.5,borderDash:[5,4],pointRadius:0,fill:false,tension:.4},
+    {label:'Realt värde',data:real,borderColor:'#059669',backgroundColor:gG,borderWidth:1.5,pointRadius:0,fill:true,tension:.4}
+  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:true,labels:{color:'#a8a29e',font:{family:'IBM Plex Mono',size:9},boxWidth:10,usePointStyle:true,pointStyle:'circle',padding:12}},tooltip:{backgroundColor:'#fff',borderColor:'#e2ded8',borderWidth:1,titleColor:'#a8a29e',bodyColor:'#1c1917',titleFont:{family:'IBM Plex Mono',size:9},bodyFont:{family:'IBM Plex Mono',size:12},padding:11,callbacks:{label:c=>'  '+c.dataset.label+': '+new Intl.NumberFormat('sv-SE',{style:'currency',currency:'SEK',maximumFractionDigits:0}).format(c.parsed.y)}}},scales:{x:{ticks:{color:'#d6d3d1',font:{family:'IBM Plex Mono',size:9},maxRotation:0},grid:{color:'rgba(0,0,0,.04)'},border:{color:'transparent'}},y:{ticks:{color:'#d6d3d1',font:{family:'IBM Plex Mono',size:9},callback:v=>{if(v>=1e9)return (v/1e9).toFixed(1)+'Mdr';if(v>=1e6)return (v/1e6).toFixed(1)+'M';if(v>=1e3)return (v/1e3).toFixed(0)+'k';return v}},grid:{color:'rgba(0,0,0,.05)'},border:{color:'transparent'}}}}});
+}
+
+function drawCompPie(data){
+  if(pChart)pChart.destroy();
+  const ctx=document.getElementById('pieChart').getContext('2d');
+  pChart=new Chart(ctx,{type:'doughnut',data:{labels:['Insatt kapital','Räntevinst'],datasets:[{data,backgroundColor:['#fde68a','#a7f3d0'],borderColor:['#d97706','#059669'],borderWidth:2,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'66%',plugins:{legend:{display:false},tooltip:{backgroundColor:'#fff',borderColor:'#e2ded8',borderWidth:1,titleColor:'#a8a29e',bodyColor:'#1c1917',titleFont:{family:'IBM Plex Mono',size:9},bodyFont:{family:'IBM Plex Mono',size:12},padding:11,callbacks:{label:c=>'  '+new Intl.NumberFormat('sv-SE',{style:'currency',currency:'SEK',maximumFractionDigits:0}).format(c.parsed)}}}}});
+}
+
+// ─────────────────── LOAN CALCULATOR ───────────────────
+let loanLineChart=null, loanPieChart=null;
+
+function syncKontant(){
+  const price=parseFloat(document.getElementById('l-price').value)||0;
+  const pct=parseFloat(document.getElementById('l-down-pct').value)||10;
+  document.getElementById('l-down-kr').value=Math.round(price*pct/100);
+}
+
+function syncPct(from){
+  const price=parseFloat(document.getElementById('l-price').value)||1;
+  if(from==='kr'){
+    const kr=parseFloat(document.getElementById('l-down-kr').value)||0;
+    document.getElementById('l-down-pct').value=(kr/price*100).toFixed(1);
+  }
+  const pct=parseFloat(document.getElementById('l-down-pct').value)||0;
+  const warn=document.getElementById('l-min-warn');
+  warn.style.display=pct<10?'block':'none';
+}
+
+// ── Auto-calculate on load ──
+window.addEventListener('DOMContentLoaded', () => {
+  calcCompound();
+  calcRentBuy();
+  const downPctEl = document.getElementById('l-down-pct');
+  if(downPctEl){
+    downPctEl.addEventListener('input',()=>{
+      syncKontant();
+      document.getElementById('l-min-warn').style.display =
+        parseFloat(downPctEl.value)<10 ? 'block' : 'none';
+    });
+  }
+});
+
+function drawLoanPie(data){
+  if(loanPieChart)loanPieChart.destroy();
+  const ctx=document.getElementById('loanPie').getContext('2d');
+  loanPieChart=new Chart(ctx,{type:'doughnut',data:{labels:['Ränta (netto)','Amortering'],datasets:[{data,backgroundColor:['#bfdbfe','#fde68a'],borderColor:['#1e40af','#d97706'],borderWidth:2,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'66%',plugins:{legend:{display:false},tooltip:{backgroundColor:'#fff',borderColor:'#e2ded8',borderWidth:1,titleColor:'#a8a29e',bodyColor:'#1c1917',titleFont:{family:'IBM Plex Mono',size:9},bodyFont:{family:'IBM Plex Mono',size:12},padding:11,callbacks:{label:c=>'  '+SEK(Math.round(c.parsed))}}}}});
+}
+
+function drawLoanLine(loanAmt, rate, amortPct, termYrs){
+  if(loanLineChart)loanLineChart.destroy();
+  const ctx=document.getElementById('loanLine').getContext('2d');
+
+  // Build year-by-year remaining balance and cumulative interest
+  const labels=[], balances=[], cumInterest=[];
+  let bal=loanAmt, cumInt=0;
+  const rMon=rate/12;
+  const amortMon = loanAmt * amortPct / 12;
+
+  for(let y=0;y<=termYrs;y++){
+    labels.push(y===0?'Nu':'År '+y);
+    balances.push(Math.round(bal));
+    cumInterest.push(Math.round(cumInt));
+    if(bal<=0)break;
+    for(let m=0;m<12;m++){
+      const intThis=bal*rMon;
+      cumInt+=intThis;
+      bal=Math.max(0,bal-amortMon);
+    }
+  }
+
+  const gB=ctx.createLinearGradient(0,0,0,230);gB.addColorStop(0,'rgba(30,64,175,.15)');gB.addColorStop(1,'rgba(30,64,175,0)');
+  const gR=ctx.createLinearGradient(0,0,0,230);gR.addColorStop(0,'rgba(220,38,38,.12)');gR.addColorStop(1,'rgba(220,38,38,0)');
+
+  loanLineChart=new Chart(ctx,{type:'line',data:{labels,datasets:[
+    {label:'Kvarvarande skuld',data:balances,borderColor:'#1e40af',backgroundColor:gB,borderWidth:2,pointRadius:0,pointHoverRadius:5,fill:true,tension:.35},
+    {label:'Kumulativ räntekostnad',data:cumInterest,borderColor:'#dc2626',backgroundColor:gR,borderWidth:1.5,borderDash:[4,3],pointRadius:0,pointHoverRadius:4,fill:true,tension:.35}
+  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:true,labels:{color:'#a8a29e',font:{family:'IBM Plex Mono',size:9},boxWidth:10,usePointStyle:true,pointStyle:'circle',padding:12}},tooltip:{backgroundColor:'#fff',borderColor:'#e2ded8',borderWidth:1,titleColor:'#a8a29e',bodyColor:'#1c1917',titleFont:{family:'IBM Plex Mono',size:9},bodyFont:{family:'IBM Plex Mono',size:12},padding:11,callbacks:{label:c=>'  '+c.dataset.label+': '+SEK(c.parsed.y)}}},scales:{x:{ticks:{color:'#d6d3d1',font:{family:'IBM Plex Mono',size:9},maxRotation:0,callback:(v,i)=>{if(labels.length>20)return i%5===0?labels[i]:'';return labels[i]}},grid:{color:'rgba(0,0,0,.04)'},border:{color:'transparent'}},y:{ticks:{color:'#d6d3d1',font:{family:'IBM Plex Mono',size:9},callback:v=>{if(v>=1e6)return (v/1e6).toFixed(1)+'M';if(v>=1e3)return (v/1e3).toFixed(0)+'k';return v}},grid:{color:'rgba(0,0,0,.05)'},border:{color:'transparent'}}}}});
+}
+
+// ─────────────────── LOAN MODE SWITCHER ───────────────────
+let loanMode = 'salary';
+
+function switchLoanMode(mode, btn){
+  loanMode = mode;
+  document.querySelectorAll('#loan-mode-tabs .ctab').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('lm-salary').style.display = mode==='salary'?'block':'none';
+  document.getElementById('lm-price').style.display  = mode==='price' ?'block':'none';
+}
+
+// Swedish income tax approximation 2026 (Stockholm kommunalskatt ~29.8% + state)
+function netMonthly(grossMon){
+  const g = grossMon;
+  const stateThresh = 53600; // ~643k/year
+  if(g <= stateThresh){
+    // Kommunalskatt 29.8%, jobbskatteavdrag reduces effective to ~30%
+    return g * 0.70;
+  } else {
+    return stateThresh * 0.70 + (g - stateThresh) * 0.50;
+  }
+}
+
+// KALP living cost standard (banks use this)
+function kalpCost(hh, kids){
+  return (hh===1 ? 8500 : 14000) + kids*2500;
+}
+
+// ─────────────────── MAIN LOAN CALC ───────────────────
+function calcLoan(){
+  const rate   = parseFloat(document.getElementById('l-rate').value)/100;
+  const stress = parseFloat(document.getElementById('l-stress').value)/100;
+  const term   = parseInt(document.getElementById('l-term').value)||30;
+  const fee    = parseFloat(document.getElementById('l-fee').value)||0;
+
+  let price, loanAmt, grossNeeded, hh, kids, otherDebt;
+
+  if(loanMode === 'salary'){
+    // --- MODE A: Salary → max loan ---
+    const sal1  = parseFloat(document.getElementById('l-sal-1').value)||0;
+    const sal2  = parseFloat(document.getElementById('l-sal-2').value)||0;
+    hh          = parseInt(document.getElementById('l-hh-a').value);
+    kids        = parseInt(document.getElementById('l-kids-a').value)||0;
+    otherDebt   = parseFloat(document.getElementById('l-other-a').value)||0;
+
+    const grossTotal = sal1 + sal2;
+    const netMon     = netMonthly(sal1) + netMonthly(sal2);
+    const kalp       = kalpCost(hh, kids);
+    const available  = netMon - kalp - otherDebt - fee;
+
+    if(available <= 0){
+      document.getElementById('loan-alert').className='alert red';
+      document.getElementById('loan-alert').innerHTML='<span class="alert-icon">⚠</span><div class="alert-text"><strong>Lönen räcker inte</strong>Efter KALP-krav och levnadskostnader finns inget utrymme för bolånebetalningar.</div>';
+      return;
+    }
+
+    // available = loan*(stress/12) + loan*(amortPct/12)
+    // We don't know amort yet — iterate: assume 90% LTV → amort 2%
+    const amortPct  = 0.02;
+    loanAmt         = available / (stress/12 + amortPct/12);
+    price           = loanAmt / 0.90; // 10% KI
+    grossNeeded     = grossTotal;
+
+  } else {
+    // --- MODE B: Price → required salary ---
+    price     = parseFloat(document.getElementById('l-price').value)||0;
+    const downKr = parseFloat(document.getElementById('l-down-kr').value)||price*0.10;
+    hh        = parseInt(document.getElementById('l-hh-b').value);
+    kids      = parseInt(document.getElementById('l-kids-b').value)||0;
+    otherDebt = parseFloat(document.getElementById('l-other-b').value)||0;
+
+    loanAmt   = price - downKr;
+    const ltv = loanAmt / price;
+    const warn = document.getElementById('l-min-warn');
+    warn.style.display = ltv > 0.90 ? 'block' : 'none';
+    if(ltv > 0.90) loanAmt = price * 0.90;
+  }
+
+  const ltv      = loanAmt / price;
+  const amortPct = ltv > 0.70 ? 0.02 : ltv > 0.50 ? 0.01 : 0;
+  const amortMon = loanAmt * amortPct / 12;
+
+  // Interest
+  const intMon  = loanAmt * rate / 12;
+  const annInt  = intMon * 12;
+  const deduct  = (Math.min(annInt,100000)*0.30 + Math.max(0,annInt-100000)*0.21) / 12;
+  const netInt  = intMon - deduct;
+  const totalMon = netInt + amortMon;
+
+  // Stress test
+  const stressIntMon = loanAmt * stress / 12;
+  const stressTot    = stressIntMon + amortMon;
+
+  // Required salary (from price mode)
+  const kalp = kalpCost(hh||1, kids||0);
+  if(loanMode === 'price'){
+    const netNeeded = stressTot + fee + (parseFloat(document.getElementById('l-other-b').value)||0) + kalp;
+    // Solve: netMonthly(gross) = netNeeded → gross = ?
+    // net = gross*0.70 if gross <= 53600, else 37520 + (gross-53600)*0.50
+    let grossSol;
+    if(netNeeded <= 53600*0.70){
+      grossSol = netNeeded / 0.70;
+    } else {
+      grossSol = 53600 + (netNeeded - 53600*0.70) / 0.50;
+    }
+    grossNeeded = grossSol;
+  }
+
+  const netMon     = netMonthly(grossNeeded);
+  const leftover   = netMon - stressTot - fee - (loanMode==='price'?(parseFloat(document.getElementById('l-other-b').value)||0):(parseFloat(document.getElementById('l-other-a').value)||0)) - kalp;
+  const ltvColor   = ltv>0.80?'var(--red-mid)':ltv>0.70?'var(--amber-mid)':'var(--green-mid)';
+
+  // --- Update alert ---
+  const alertEl = document.getElementById('loan-alert');
+  if(ltv > 0.90){
+    alertEl.className='alert red';
+    alertEl.innerHTML='<span class="alert-icon">⚠</span><div class="alert-text"><strong>Bolånetak överskridet</strong>Kontantinsatsen måste vara minst 10% av priset.</div>';
+  } else if(ltv > 0.80){
+    alertEl.className='alert amber';
+    alertEl.innerHTML=`<span class="alert-icon">⚡</span><div class="alert-text"><strong>Hög belåningsgrad (${(ltv*100).toFixed(1)}%)</strong>Amorteringskrav: 2%/år. Stresstest visar ${SEK(Math.round(stressTot+fee))}/mån.</div>`;
+  } else {
+    alertEl.className='alert green';
+    alertEl.innerHTML=`<span class="alert-icon">✓</span><div class="alert-text"><strong>Godkänd belåningsgrad (${(ltv*100).toFixed(1)}%)</strong>${loanMode==='salary'?'Maxlån baserat på KALP-krav vid kalkylränta '+( stress*100).toFixed(1)+'%.':'Lönekravet är baserat på KALP och kalkylräntan '+( stress*100).toFixed(1)+'%.'}</div>`;
+  }
+
+  // --- Stat cards ---
+  document.getElementById('l-loan-amt').textContent    = SEK(Math.round(loanAmt));
+  document.getElementById('l-ltv-badge').textContent   = 'LTV '+( ltv*100).toFixed(1)+'%';
+  document.getElementById('l-amort').textContent       = SEK(Math.round(amortMon));
+  document.getElementById('l-amort-pct').textContent   = amortPct*100+'% per år';
+  document.getElementById('l-monthly').textContent     = SEK(Math.round(totalMon+fee));
+  document.getElementById('l-monthly-sub').textContent = 'Ränta (netto) + amortering + BRF';
+  document.getElementById('l-salary').textContent      = SEK(Math.round(grossNeeded));
+  document.getElementById('l-salary-sub').textContent  = loanMode==='salary'?'Din bruttolön/mån':'Krav bruttolön/mån';
+
+  // --- LTV bar ---
+  document.getElementById('l-ltv-bar').style.width      = Math.min(ltv*100,100)+'%';
+  document.getElementById('l-ltv-bar').style.background = ltvColor;
+  document.getElementById('l-ltv-pct').textContent      = (ltv*100).toFixed(1)+'%';
+  document.getElementById('l-amort-info').innerHTML     =
+    `<span style="font-family:'IBM Plex Mono',monospace;font-size:10px">Amorteringskrav: <strong>${amortPct===0.02?'2% per år (LTV >70%)':amortPct===0.01?'1% per år (LTV 50–70%)':'Inget krav (LTV <50%)'}</strong></span>`;
+
+  // --- Cost breakdown ---
+  document.getElementById('lc-interest').textContent    = SEK(Math.round(intMon));
+  document.getElementById('lc-deduction').textContent   = '−'+SEK(Math.round(deduct));
+  document.getElementById('lc-net-interest').textContent= SEK(Math.round(netInt));
+  document.getElementById('lc-amort2').textContent      = SEK(Math.round(amortMon));
+  document.getElementById('lc-total').textContent       = SEK(Math.round(totalMon+fee));
+  document.getElementById('lc-stress-rate-lbl').textContent = (stress*100).toFixed(1)+'%';
+  document.getElementById('lc-stress').textContent      = SEK(Math.round(stressIntMon));
+  document.getElementById('lc-stress-total').textContent= SEK(Math.round(stressTot+fee));
+
+  // --- KALP breakdown ---
+  document.getElementById('lt-gross').textContent      = SEK(Math.round(grossNeeded))+'/mån';
+  document.getElementById('lt-net').textContent        = SEK(Math.round(netMon))+'/mån';
+  document.getElementById('lt-stress-cost').textContent= SEK(Math.round(stressTot+fee));
+  document.getElementById('lt-kalp').textContent       = SEK(kalp);
+  document.getElementById('lt-left').textContent       = SEK(Math.round(Math.max(0,leftover)));
+  document.getElementById('lt-ratio').textContent      = (loanAmt/(grossNeeded*12)).toFixed(2)+'×';
+
+  // --- Pie ---
+  const pieData=[Math.round(netInt+fee), Math.round(amortMon)];
+  document.getElementById('loan-pie-legend').innerHTML=`
+    <div class="pie-row"><div class="pie-dot" style="background:var(--blue)"></div><div class="pie-rl">Ränta + BRF (efter avdrag)</div><div class="pie-rv">${SEK(Math.round(netInt+fee))}</div></div>
+    <div class="pie-row"><div class="pie-dot" style="background:var(--amber-mid)"></div><div class="pie-rl">Amortering</div><div class="pie-rv">${SEK(Math.round(amortMon))}</div></div>`;
+  drawLoanPie(pieData);
+  drawLoanLine(loanAmt, rate, amortPct, term);
+
+  // --- Scenario table: 3 rate levels ---
+  const scenarios = [1.5, 2.65, rate, 4.0, 6.5].filter((v,i,a)=>a.indexOf(v)===i).sort((a,b)=>a-b);
+  const tb2 = document.getElementById('scenario-table');
+  if(tb2){
+    tb2.innerHTML = '';
+    scenarios.forEach(r => {
+      const iMon   = loanAmt * r/100 / 12;
+      const annI   = iMon * 12;
+      const ded    = (Math.min(annI,100000)*0.30 + Math.max(0,annI-100000)*0.21)/12;
+      const netI   = iMon - ded;
+      const tot    = netI + amortMon;
+      const totInt30 = iMon * 12 * 30;
+      const isActive = Math.abs(r - rate) < 0.01;
+      const tr = document.createElement('tr');
+      tr.style.background = isActive ? 'var(--blue-dim)' : '';
+      tr.style.borderBottom = '1px solid var(--border)';
+      const rColor = r <= 2.65 ? 'var(--green-mid)' : r <= 4.0 ? 'var(--amber-mid)' : 'var(--red-mid)';
+      tr.innerHTML = `
+        <td style="padding:8px 12px;font-family:'IBM Plex Mono',monospace;font-weight:${isActive?'600':'400'};color:${rColor}">${r.toFixed(2)}%${isActive?' ◀ nu':''}</td>
+        <td style="padding:8px 12px;text-align:right;font-family:'IBM Plex Mono',monospace;color:var(--ink)">${SEK(Math.round(iMon))}</td>
+        <td style="padding:8px 12px;text-align:right;font-family:'IBM Plex Mono',monospace;color:var(--blue)">${SEK(Math.round(netI))}</td>
+        <td style="padding:8px 12px;text-align:right;font-family:'IBM Plex Mono',monospace;color:var(--ink-2)">${SEK(Math.round(amortMon))}</td>
+        <td style="padding:8px 12px;text-align:right;font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--ink)">${SEK(Math.round(tot))}</td>
+        <td style="padding:8px 12px;text-align:right;font-family:'IBM Plex Mono',monospace;color:var(--red-mid)">${SEK(Math.round(totInt30))}</td>`;
+      tb2.appendChild(tr);
+    });
+  }
+
+  // --- Equity built at year 5, 10, 20 ---
+  function equityAt(yr){
+    const loanLeft = Math.max(0, loanAmt - amortMon*12*yr);
+    return loanAmt - loanLeft; // equity from amortization only
+  }
+  const eq5  = equityAt(5),  eq10 = equityAt(10), eq20 = equityAt(20);
+  const setEq = (id, pidx, val) => {
+    const el = document.getElementById(id); if(!el) return;
+    el.textContent = SEK(Math.round(val));
+    const pEl = document.getElementById(pidx); if(!pEl) return;
+    pEl.textContent = (val/loanAmt*100).toFixed(1)+'% av lånet amorerat';
+  };
+  setEq('sc-eq5','sc-eq5-pct',eq5);
+  setEq('sc-eq10','sc-eq10-pct',eq10);
+  setEq('sc-eq20','sc-eq20-pct',eq20);
+}
+
+// ─────────────────── RENT VS BUY ───────────────────
+let rbLineChart=null, rbCostChart=null;
+
+function calcRentBuy(){
+  const price     = parseFloat(document.getElementById('rb-price').value)||3500000;
+  const downPct   = parseFloat(document.getElementById('rb-down-pct').value)/100;
+  const appRate   = parseFloat(document.getElementById('rb-appreciation').value)/100;
+  const rate      = parseFloat(document.getElementById('rb-rate').value)/100;
+  const fee       = parseFloat(document.getElementById('rb-fee').value)||0;
+  const drift     = parseFloat(document.getElementById('rb-drift').value)||0;
+  const maintPct  = parseFloat(document.getElementById('rb-maint').value)/100;
+  const rent0     = parseFloat(document.getElementById('rb-rent').value)||0;
+  const rentRise  = parseFloat(document.getElementById('rb-rentrise').value)/100;
+  const invRate   = parseFloat(document.getElementById('rb-inv-rate').value)/100;
+  const Y         = parseInt(document.getElementById('rb-years').value)||20;
+  const inf       = parseFloat(document.getElementById('rb-inflation').value)/100;
+  const cgt       = parseFloat(document.getElementById('rb-cgt').value)/100;
+
+  const downKr    = price * downPct;
+  const loanAmt   = price - downKr;
+  const ltv       = loanAmt / price;
+  const amortPct  = ltv > 0.70 ? 0.02 : ltv > 0.50 ? 0.01 : 0;
+
+  // Year-by-year simulation
+  const labels=[], ownWealth=[], rentPortfolio=[];
+  const ownMonthlyCosts=[], rentMonthlyCosts=[];
+
+  let loan        = loanAmt;
+  let propVal     = price;
+  let portfolio   = downKr; // renter starts with same down payment invested
+  let cumOwnCost  = 0;
+  let cumRentCost = 0;
+  let cumInvested = 0;
+
+  for(let y=0; y<=Y; y++){
+    labels.push(y===0?'Nu':'År '+y);
+
+    // --- Own costs this year ---
+    const annualInterest = loan * rate;
+    const annualDeduct   = Math.min(annualInterest,100000)*0.30 + Math.max(0,annualInterest-100000)*0.21;
+    const netInterest    = annualInterest - annualDeduct;
+    const amortAnnual    = loanAmt * amortPct;  // fixed amortization base
+    const maintAnnual    = propVal * maintPct;
+    const feeAnnual      = fee * 12;
+    const driftAnnual    = drift * 12;
+
+    const ownCostAnnual  = netInterest + amortAnnual + maintAnnual + feeAnnual + driftAnnual;
+    const ownCostMonthly = ownCostAnnual / 12;
+
+    // Equity = property value - remaining loan
+    const equity = propVal - loan;
+    // After CGT on gain from original price
+    const gain         = Math.max(0, propVal - price);
+    const taxOnGain    = gain * cgt;
+    const ownNetWealth = equity - taxOnGain;
+
+    ownWealth.push(Math.round(ownNetWealth));
+    ownMonthlyCosts.push(Math.round(ownCostMonthly));
+
+    // --- Rent costs this year ---
+    const rentAnnual    = y===0 ? rent0*12 : rent0*12*Math.pow(1+rentRise,y);
+    const rentMonthly   = rentAnnual / 12;
+    rentMonthlyCosts.push(Math.round(rentMonthly));
+
+    // Renter invests the difference: (own costs - rent costs), plus the down payment invested
+    const diffMonthly = ownCostMonthly - rentMonthly;
+    // Portfolio grows at invRate
+    const portfolioVal = portfolio * Math.pow(1+invRate, y===0?0:1);
+    // Additional monthly contributions (if owning is more expensive, renter invests the diff)
+    const monthlyInv   = Math.max(0, diffMonthly); // only invest if owning is more expensive
+    rentPortfolio.push(Math.round(portfolio * (y===0?1:1)));
+
+    cumOwnCost  += ownCostAnnual;
+    cumRentCost += rentAnnual;
+    cumInvested += monthlyInv * 12;
+
+    if(y===0){ rentPortfolio[0]=Math.round(downKr); continue; }
+
+    // Update for next year
+    loan     = Math.max(0, loan - amortAnnual);
+    propVal  = propVal * (1+appRate);
+    portfolio = (portfolio + monthlyInv*12) * (1+invRate);
+    rentPortfolio[y] = Math.round(portfolio);
+  }
+
+  const finalOwnWealth  = ownWealth[Y];
+  const finalRentPortf  = rentPortfolio[Y];
+  const diff            = finalOwnWealth - finalRentPortf;
+  const winner          = diff > 0 ? 'Äga' : 'Hyra + Investera';
+
+  // Break-even: first year own wealth > rent portfolio
+  let breakEven = 'Aldrig';
+  for(let i=1;i<=Y;i++){
+    if(ownWealth[i]>rentPortfolio[i]){breakEven='År '+i;break;}
+  }
+
+  // Banner
+  const banner = document.getElementById('rb-banner');
+  if(diff>0){
+    banner.className='alert blue';
+    banner.innerHTML=`<span class="alert-icon">🏠</span><div class="alert-text"><strong>Äga är bättre efter ${Y} år</strong>Förmögenhetsskillnad: +${SEK(Math.abs(diff))} till fördel för ägande.</div>`;
+  } else {
+    banner.className='alert green';
+    banner.innerHTML=`<span class="alert-icon">📈</span><div class="alert-text"><strong>Hyra + Investera är bättre efter ${Y} år</strong>Förmögenhetsskillnad: +${SEK(Math.abs(diff))} till fördel för hyresalternativet.</div>`;
+  }
+
+  // Summary cards
+  document.getElementById('rb-own-wealth').textContent = SEK(finalOwnWealth);
+  document.getElementById('rb-own-sub').textContent    = `Bostadsvärde minus skuld minus reavinstskatt`;
+  document.getElementById('rb-rent-wealth').textContent= SEK(finalRentPortf);
+  document.getElementById('rb-rent-sub').textContent   = `Portföljvärde efter ${Y} år (${(invRate*100).toFixed(1)}% avkastn.)`;
+
+  // Detail rows
+  const finalPropVal = price * Math.pow(1+appRate,Y);
+  const finalLoan    = Math.max(0, loanAmt - loanAmt*amortPct*Y);
+  const finalGain    = Math.max(0, finalPropVal - price);
+  document.getElementById('rb-own-detail').innerHTML=`
+    <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--ink-3)">Bostadsvärde år ${Y}</span><span style="font-family:'IBM Plex Mono',monospace;color:var(--ink)">${SEK(Math.round(finalPropVal))}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--ink-3)">Kvarvarande skuld</span><span style="font-family:'IBM Plex Mono',monospace;color:var(--red-mid)">−${SEK(Math.round(finalLoan))}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--ink-3)">Reavinstskatt</span><span style="font-family:'IBM Plex Mono',monospace;color:var(--red-mid)">−${SEK(Math.round(finalGain*cgt))}</span></div>`;
+  document.getElementById('rb-rent-detail').innerHTML=`
+    <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--ink-3)">Kontantinsats investerad</span><span style="font-family:'IBM Plex Mono',monospace;color:var(--ink)">${SEK(Math.round(downKr))}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--ink-3)">Total månadsdiff investerad</span><span style="font-family:'IBM Plex Mono',monospace;color:var(--ink)">${SEK(Math.round(cumInvested))}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--ink-3)">Portföljens avkastning</span><span style="font-family:'IBM Plex Mono',monospace;color:var(--green-mid)">+${SEK(Math.round(finalRentPortf-downKr-cumInvested))}</span></div>`;
+
+  // Tech stats
+  document.getElementById('rb-breakeven').textContent  = breakEven;
+  document.getElementById('rb-own-cost').textContent   = SEK(Math.round(cumOwnCost/Y/12))+'/mån snitt';
+  document.getElementById('rb-rent-cost').textContent  = SEK(Math.round(cumRentCost/Y/12))+'/mån snitt';
+  document.getElementById('rb-gain').textContent       = SEK(Math.round(finalGain));
+  document.getElementById('rb-inv-total').textContent  = SEK(Math.round(cumInvested+downKr));
+  document.getElementById('rb-diff').textContent       = (diff>0?'+':'')+SEK(Math.round(diff));
+
+  // Year table
+  const tb = document.getElementById('rb-table');
+  tb.innerHTML='';
+  for(let i=0;i<=Y;i++){
+    const diff_i = ownMonthlyCosts[i] - rentMonthlyCosts[i];
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td class="yr">${i===0?'Start':i}</td>
+      <td class="num">${SEK(ownMonthlyCosts[i])}</td>
+      <td>${SEK(rentMonthlyCosts[i])}</td>
+      <td class="${diff_i>0?'':'gr'}">${(diff_i>0?'+':'')+SEK(diff_i)}</td>
+      <td class="${ownWealth[i]>rentPortfolio[i]?'num':'muted'}">${SEK(ownWealth[i])}</td>
+      <td class="${rentPortfolio[i]>ownWealth[i]?'gr':'muted'}">${SEK(rentPortfolio[i])}</td>`;
+    tb.appendChild(tr);
+  }
+
+  drawRbLine(labels, ownWealth, rentPortfolio);
+  drawRbCost(labels, ownMonthlyCosts, rentMonthlyCosts);
+}
+
+function drawRbLine(labels, own, rent){
+  if(rbLineChart)rbLineChart.destroy();
+  const ctx=document.getElementById('rbLineChart').getContext('2d');
+  const gB=ctx.createLinearGradient(0,0,0,260);gB.addColorStop(0,'rgba(30,64,175,.15)');gB.addColorStop(1,'rgba(30,64,175,0)');
+  const gG=ctx.createLinearGradient(0,0,0,260);gG.addColorStop(0,'rgba(5,150,105,.12)');gG.addColorStop(1,'rgba(5,150,105,0)');
+  rbLineChart=new Chart(ctx,{type:'line',data:{labels,datasets:[
+    {label:'Äga — nettoförmögenhet',data:own,borderColor:'#1e40af',backgroundColor:gB,borderWidth:2.5,pointRadius:0,pointHoverRadius:5,fill:true,tension:.4},
+    {label:'Hyra + Investera',data:rent,borderColor:'#059669',backgroundColor:gG,borderWidth:2.5,pointRadius:0,pointHoverRadius:5,fill:true,tension:.4}
+  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:true,labels:{color:'#a8a29e',font:{family:'IBM Plex Mono',size:9},boxWidth:10,usePointStyle:true,pointStyle:'circle',padding:12}},tooltip:{backgroundColor:'#fff',borderColor:'#e2ded8',borderWidth:1,titleColor:'#a8a29e',bodyColor:'#1c1917',titleFont:{family:'IBM Plex Mono',size:9},bodyFont:{family:'IBM Plex Mono',size:12},padding:11,callbacks:{label:c=>'  '+c.dataset.label+': '+SEK(c.parsed.y)}}},scales:{x:{ticks:{color:'#d6d3d1',font:{family:'IBM Plex Mono',size:9},maxRotation:0,callback:(v,i)=>{if(labels.length>20)return i%5===0?labels[i]:'';return labels[i]}},grid:{color:'rgba(0,0,0,.04)'},border:{color:'transparent'}},y:{ticks:{color:'#d6d3d1',font:{family:'IBM Plex Mono',size:9},callback:v=>{if(v>=1e6)return (v/1e6).toFixed(1)+'M';if(v>=1e3)return (v/1e3).toFixed(0)+'k';return v}},grid:{color:'rgba(0,0,0,.05)'},border:{color:'transparent'}}}}});
+}
+
+function drawRbCost(labels, own, rent){
+  if(rbCostChart)rbCostChart.destroy();
+  const ctx=document.getElementById('rbCostChart').getContext('2d');
+  rbCostChart=new Chart(ctx,{type:'line',data:{labels,datasets:[
+    {label:'Äga — kostnad/mån',data:own,borderColor:'#1e40af',backgroundColor:'transparent',borderWidth:2,pointRadius:0,pointHoverRadius:4,borderDash:[],tension:.35},
+    {label:'Hyra — kostnad/mån',data:rent,borderColor:'#059669',backgroundColor:'transparent',borderWidth:2,pointRadius:0,pointHoverRadius:4,borderDash:[5,4],tension:.35}
+  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:true,labels:{color:'#a8a29e',font:{family:'IBM Plex Mono',size:9},boxWidth:10,usePointStyle:true,pointStyle:'circle',padding:12}},tooltip:{backgroundColor:'#fff',borderColor:'#e2ded8',borderWidth:1,titleColor:'#a8a29e',bodyColor:'#1c1917',titleFont:{family:'IBM Plex Mono',size:9},bodyFont:{family:'IBM Plex Mono',size:12},padding:11,callbacks:{label:c=>'  '+c.dataset.label+': '+SEK(c.parsed.y)}}},scales:{x:{ticks:{color:'#d6d3d1',font:{family:'IBM Plex Mono',size:9},maxRotation:0,callback:(v,i)=>{if(labels.length>20)return i%5===0?labels[i]:'';return labels[i]}},grid:{color:'rgba(0,0,0,.04)'},border:{color:'transparent'}},y:{ticks:{color:'#d6d3d1',font:{family:'IBM Plex Mono',size:9},callback:v=>{if(v>=1e3)return (v/1e3).toFixed(0)+'k';return v}},grid:{color:'rgba(0,0,0,.05)'},border:{color:'transparent'}}}}});
+}
+
+// ─────────────────── INVESTMENT VS PROPERTY CHART ───────────────────
+(function(){
+  // Historical index values 2000–2026 (normalized to 100 at year 2000)
+  // OMXS30 total return, MSCI World SEK, Swedish 10yr govt bonds, Östermalm property
+  // Sources: Refinitiv, MSCI, Riksbanken, Mäklarstatistik
+
+  window.INV_DATA = {
+    years: [2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023,2024,2025,2026],
+    // OMXS30 total return index (2000=100)
+    omx:  [100,83,62,77,92,116,142,152,96,121,148,127,148,180,197,216,236,264,231,282,294,358,290,310,355,385,400],
+    // MSCI World SEK total return (2000=100)
+    msci: [100,86,68,80,93,118,140,158,92,128,162,153,183,222,255,298,332,374,333,412,438,534,470,502,570,630,660],
+    // Swedish 10yr govt bond cumulative (2000=100, ~4% avg annual)
+    bond: [100,104,108,112,117,122,127,132,137,143,149,155,161,167,174,181,188,196,204,212,221,229,238,247,257,267,278],
+    // Östermalm equity return on 10% down payment (leverage effect)
+    // Price 2000=100 (kvm), cost of carry deducted, net return on equity
+    prop: [100,107,116,130,145,170,200,235,222,226,260,290,300,325,360,425,475,530,580,610,630,710,660,665,700,735,750],
+  };
+})();
+
+let investChart = null;
+
+function drawInvestChart(){
+  const el = document.getElementById('investChart');
+  if(!el) return;
+
+  const startIdx = parseInt(document.getElementById('inv-year').value)||0;
+  const capital  = parseFloat(document.getElementById('inv-start').value)||500000;
+  const mode     = document.getElementById('inv-mode').value;
+
+  const D = window.INV_DATA;
+  const years = D.years.slice(startIdx);
+
+  function toValues(arr){
+    const base = arr[startIdx];
+    return arr.slice(startIdx).map(v =>
+      mode === 'pct'
+        ? parseFloat(((v/base - 1)*100).toFixed(1))
+        : Math.round(capital * v / base)
+    );
+  }
+
+  const omxVals  = toValues(D.omx);
+  const msciVals = toValues(D.msci);
+  const bondVals = toValues(D.bond);
+  const propVals = toValues(D.prop);
+
+  // Update summary cards
+  const fmt = mode==='pct'
+    ? v => (v>=0?'+':'')+v.toFixed(1)+'%'
+    : v => SEK(v);
+  const last = arr => arr[arr.length-1];
+  const baseProp = D.prop[startIdx], baseOmx = D.omx[startIdx],
+        baseMsci = D.msci[startIdx], baseBond = D.bond[startIdx];
+  const pctFmt = (end, base) => (end>=base?'+':'')+((end/base-1)*100).toFixed(0)+'% sedan '+D.years[startIdx];
+
+  document.getElementById('ic-prop').textContent    = fmt(last(propVals));
+  document.getElementById('ic-prop-pct').textContent= pctFmt(D.prop[D.prop.length-1], baseProp);
+  document.getElementById('ic-omx').textContent     = fmt(last(omxVals));
+  document.getElementById('ic-omx-pct').textContent = pctFmt(D.omx[D.omx.length-1], baseOmx);
+  document.getElementById('ic-msci').textContent    = fmt(last(msciVals));
+  document.getElementById('ic-msci-pct').textContent= pctFmt(D.msci[D.msci.length-1], baseMsci);
+  document.getElementById('ic-bond').textContent    = fmt(last(bondVals));
+  document.getElementById('ic-bond-pct').textContent= pctFmt(D.bond[D.bond.length-1], baseBond);
+
+  if(investChart) investChart.destroy();
+  const ctx = el.getContext('2d');
+
+  const gV=ctx.createLinearGradient(0,0,0,300);gV.addColorStop(0,'rgba(124,58,237,.12)');gV.addColorStop(1,'rgba(124,58,237,0)');
+  const gB2=ctx.createLinearGradient(0,0,0,300);gB2.addColorStop(0,'rgba(30,64,175,.10)');gB2.addColorStop(1,'rgba(30,64,175,0)');
+  const gG=ctx.createLinearGradient(0,0,0,300);gG.addColorStop(0,'rgba(5,150,105,.10)');gG.addColorStop(1,'rgba(5,150,105,0)');
+  const gA=ctx.createLinearGradient(0,0,0,300);gA.addColorStop(0,'rgba(217,119,6,.08)');gA.addColorStop(1,'rgba(217,119,6,0)');
+
+  const fmtTick = v => mode==='pct'
+    ? (v>=0?'+':'')+v+'%'
+    : v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?(v/1e3).toFixed(0)+'k':v;
+
+  investChart = new Chart(ctx,{
+    type:'line',
+    data:{labels:years, datasets:[
+      {label:'Östermalm (eget kapital)', data:propVals, borderColor:'#7c3aed', backgroundColor:gV,  borderWidth:2.5, pointRadius:0, pointHoverRadius:5, fill:true, tension:.4},
+      {label:'OMXS30 (total return)',    data:omxVals,  borderColor:'#1e40af', backgroundColor:gB2, borderWidth:2,   pointRadius:0, pointHoverRadius:5, fill:true, tension:.4},
+      {label:'MSCI World SEK',           data:msciVals, borderColor:'#059669', backgroundColor:gG,  borderWidth:2,   pointRadius:0, pointHoverRadius:5, fill:true, tension:.4},
+      {label:'Statsobligationer',        data:bondVals, borderColor:'#d97706', backgroundColor:gA,  borderWidth:1.5, pointRadius:0, pointHoverRadius:4, fill:true, tension:.4, borderDash:[4,3]},
+    ]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index', intersect:false},
+      plugins:{
+        legend:{display:true, labels:{color:'#a8a29e', font:{family:'IBM Plex Mono',size:9}, boxWidth:10, usePointStyle:true, pointStyle:'circle', padding:14}},
+        tooltip:{
+          backgroundColor:'#fff', borderColor:'#e2ded8', borderWidth:1,
+          titleColor:'#57534e', bodyColor:'#1c1917',
+          titleFont:{family:'IBM Plex Mono',size:10,weight:'bold'},
+          bodyFont:{family:'IBM Plex Mono',size:11}, padding:12,
+          callbacks:{
+            title: items => 'År '+items[0].label,
+            label: c => {
+              const v = c.parsed.y;
+              const str = mode==='pct'
+                ? (v>=0?'+':'')+v.toFixed(1)+'%'
+                : SEK(v);
+              return '  '+c.dataset.label+': '+str;
+            }
+          }
+        }
+      },
+      scales:{
+        x:{ticks:{color:'#d6d3d1', font:{family:'IBM Plex Mono',size:9}, maxRotation:0, callback:(v,i)=>years[i]%5===0?years[i]:''},
+           grid:{color:'rgba(0,0,0,.04)'}, border:{color:'transparent'}},
+        y:{ticks:{color:'#d6d3d1', font:{family:'IBM Plex Mono',size:9}, callback:fmtTick},
+           grid:{color:'rgba(0,0,0,.05)'}, border:{color:'transparent'}}
+      }
+    }
+  });
+}
+
+// ─────────────────── PRICE HISTORY CHART ───────────────────
+function drawPriceHistory(){
+  const el = document.getElementById('priceHistoryChart');
+  if(!el) return;
+  const ctx = el.getContext('2d');
+
+  const years = [2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023,2024,2025,2026];
+
+  // Estimated kr/kvm (bostadsrätter) — Mäklarstatistik, SCB, Boio
+  const ostermalm = [20000,21500,23000,26000,29000,34000,40000,47000,44000,45000,52000,58000,60000,65000,72000,85000,95000,106000,116000,122000,126000,142000,132000,133000,140000,147000,150000];
+  const danderyd  = [14000,15000,16500,18000,20500,24000,28000,34000,31000,32000,37000,42000,44000,47000,53000,63000,72000,80000,87000,92000,97000,110000,100000,90000,92000,94000,95000];
+  const lidingo   = [13000,14000,15500,17000,19000,22000,26000,31000,28000,29000,34000,39000,41000,44000,49000,58000,66000,74000,80000,85000,90000,102000,93000,83000,80000,81000,82000];
+  const skafto    = [5000,5200,5500,5800,6300,7000,7800,9500,8800,9000,10500,11500,12500,13500,15000,17500,20000,23000,26000,30000,40000,56000,50000,42000,43000,44500,45000];
+
+  const gV=ctx.createLinearGradient(0,0,0,300);gV.addColorStop(0,'rgba(124,58,237,.13)');gV.addColorStop(1,'rgba(124,58,237,0)');
+  const gB=ctx.createLinearGradient(0,0,0,300);gB.addColorStop(0,'rgba(30,64,175,.11)');gB.addColorStop(1,'rgba(30,64,175,0)');
+  const gG=ctx.createLinearGradient(0,0,0,300);gG.addColorStop(0,'rgba(5,150,105,.11)');gG.addColorStop(1,'rgba(5,150,105,0)');
+  const gA=ctx.createLinearGradient(0,0,0,300);gA.addColorStop(0,'rgba(217,119,6,.11)');gA.addColorStop(1,'rgba(217,119,6,0)');
+
+  new Chart(ctx,{
+    type:'line',
+    data:{
+      labels:years,
+      datasets:[
+        {label:'Östermalm', data:ostermalm, borderColor:'#7c3aed', backgroundColor:gV, borderWidth:2.5, pointRadius:0, pointHoverRadius:5, pointHoverBackgroundColor:'#7c3aed', fill:true, tension:.4},
+        {label:'Danderyd',  data:danderyd,  borderColor:'#1e40af', backgroundColor:gB, borderWidth:2,   pointRadius:0, pointHoverRadius:5, pointHoverBackgroundColor:'#1e40af', fill:true, tension:.4},
+        {label:'Lidingö',   data:lidingo,   borderColor:'#059669', backgroundColor:gG, borderWidth:2,   pointRadius:0, pointHoverRadius:5, pointHoverBackgroundColor:'#059669', fill:true, tension:.4},
+        {label:'Skaftö',    data:skafto,    borderColor:'#d97706', backgroundColor:gA, borderWidth:2,   pointRadius:0, pointHoverRadius:5, pointHoverBackgroundColor:'#d97706', fill:true, tension:.4},
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index', intersect:false},
+      plugins:{
+        legend:{display:true, labels:{color:'#a8a29e', font:{family:'IBM Plex Mono',size:9}, boxWidth:10, usePointStyle:true, pointStyle:'circle', padding:14}},
+        tooltip:{
+          backgroundColor:'#fff', borderColor:'#e2ded8', borderWidth:1,
+          titleColor:'#57534e', bodyColor:'#1c1917',
+          titleFont:{family:'IBM Plex Mono',size:10, weight:'bold'},
+          bodyFont:{family:'IBM Plex Mono',size:11}, padding:12,
+          callbacks:{
+            title: items => 'År ' + items[0].label,
+            label: c => {
+              const bases = {Östermalm:20000, Danderyd:14000, Lidingö:13000, Skaftö:5000};
+              const base  = bases[c.dataset.label]||1;
+              const pct   = ((c.parsed.y - base)/base*100).toFixed(0);
+              return '  ' + c.dataset.label + ': ' + N2(c.parsed.y) + ' kr/kvm  (+'+pct+'% vs 2000)';
+            }
+          }
+        }
+      },
+      scales:{
+        x:{
+          ticks:{color:'#d6d3d1', font:{family:'IBM Plex Mono',size:9}, maxRotation:0,
+            callback:(v,i)=> years[i]%5===0 ? years[i] : ''},
+          grid:{color:'rgba(0,0,0,.04)'}, border:{color:'transparent'}
+        },
+        y:{
+          ticks:{color:'#d6d3d1', font:{family:'IBM Plex Mono',size:9},
+            callback:v => v>=1000?(v/1000).toFixed(0)+'k':v},
+          grid:{color:'rgba(0,0,0,.05)'}, border:{color:'transparent'}
+        }
+      }
+    }
+  });
+}
+
+// ── Auto-calculate on load ──
+window.addEventListener('DOMContentLoaded', () => {
+  calcCompound();
+  syncKontant();
+  calcRentBuy();
+  drawPriceHistory();
+  drawInvestChart();
+});
+</script>
+</body>
+</html>
