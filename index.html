@@ -6,6 +6,7 @@
 <title>Investeringskalkylator</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,600;1,300&family=IBM+Plex+Sans:wght@300;400;500&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
 :root {
   --bg:        #f0ede8;
@@ -58,7 +59,7 @@ h1 em{font-style:italic;color:var(--blue)}
 .header-date{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink-3);text-align:right}
 
 /* ── Tab nav ── */
-.tab-nav{display:flex;gap:2px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:4px;margin-bottom:24px;box-shadow:var(--shadow);width:fit-content}
+.tab-nav{display:flex;gap:2px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:4px;margin-bottom:24px;box-shadow:var(--shadow);width:fit-content;flex-wrap:wrap;max-width:100%}
 .tab-nav-btn{padding:9px 24px;background:transparent;border:none;border-radius:var(--r);color:var(--ink-2);font-family:'IBM Plex Sans',sans-serif;font-size:13px;font-weight:400;cursor:pointer;transition:all .18s;white-space:nowrap;display:flex;align-items:center;gap:8px}
 .tab-nav-btn .tic{font-size:14px}
 .tab-nav-btn.active{background:var(--blue);color:#fff;font-weight:500;box-shadow:0 1px 4px rgba(30,64,175,.25)}
@@ -67,6 +68,47 @@ h1 em{font-style:italic;color:var(--blue)}
 /* ── Tab content ── */
 .tab-content{display:none}
 .tab-content.active{display:block}
+
+/* ── Food scanner ── */
+.food-layout{display:grid;grid-template-columns:minmax(280px,420px) 1fr;gap:20px;align-items:start}
+@media(max-width:900px){.food-layout{grid-template-columns:1fr}}
+#food-reader{width:100%;overflow:hidden;border-radius:var(--r);background:#111;min-height:220px}
+#food-reader video{border-radius:var(--r)!important}
+.food-scan-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.btn-secondary{flex:1;min-width:120px;padding:11px;background:var(--surface2);color:var(--ink);border:1px solid var(--border);border-radius:var(--r);font-family:'IBM Plex Sans',sans-serif;font-weight:500;font-size:13px;cursor:pointer;transition:all .15s}
+.btn-secondary:hover{border-color:var(--blue-mid);color:var(--blue)}
+.btn-secondary.on{background:var(--blue-dim);border-color:var(--blue-b);color:var(--blue)}
+.food-manual{display:flex;gap:8px;margin-top:12px}
+.food-manual input[type="text"]{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);color:var(--ink);font-family:'IBM Plex Mono',monospace;font-size:14px;padding:10px 12px;outline:none}
+.food-manual input[type="text"]:focus{border-color:var(--blue-mid);box-shadow:0 0 0 3px rgba(59,130,246,.12);background:#fff}
+.food-manual .btn{width:auto;margin-top:0;padding:10px 16px;white-space:nowrap}
+.food-hint{margin-top:10px;font-size:11px;color:var(--ink-3);line-height:1.45}
+.food-result{display:none}
+.food-result.show{display:block}
+.food-hero{display:flex;gap:16px;align-items:flex-start;margin-bottom:16px}
+.food-img{width:88px;height:88px;object-fit:contain;border-radius:var(--r);border:1px solid var(--border);background:var(--surface2);flex-shrink:0}
+.food-img.placeholder{display:flex;align-items:center;justify-content:center;color:var(--ink-3);font-size:28px}
+.food-name{font-family:'Fraunces',serif;font-weight:400;font-size:1.45rem;line-height:1.15;letter-spacing:-.02em;margin-bottom:4px}
+.food-brand{color:var(--ink-3);font-size:12px;margin-bottom:10px}
+.health-badge{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;font-weight:500;font-size:13px;border:1px solid}
+.health-badge.good{background:var(--green-dim);color:var(--green);border-color:var(--green-b)}
+.health-badge.mid{background:var(--amber-dim);color:var(--amber);border-color:var(--amber-b)}
+.health-badge.bad{background:var(--red-dim);color:var(--red);border-color:var(--red-b)}
+.health-badge.unk{background:var(--surface2);color:var(--ink-2);border-color:var(--border)}
+.allergen-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-top:8px}
+.allergen-chip{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:var(--r);border:1px solid var(--border);background:var(--surface2);font-size:12px;font-weight:500}
+.allergen-chip.yes{background:var(--red-dim);border-color:var(--red-b);color:var(--red)}
+.allergen-chip.no{background:var(--green-dim);border-color:var(--green-b);color:var(--green)}
+.allergen-chip .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.allergen-chip.yes .dot{background:var(--red-mid)}
+.allergen-chip.no .dot{background:var(--green-mid)}
+.food-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0}
+@media(max-width:520px){.food-meta{grid-template-columns:1fr}}
+.food-meta .stat{padding:14px}
+.food-ingredients{margin-top:8px;font-size:12px;line-height:1.55;color:var(--ink-2);max-height:140px;overflow:auto;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r)}
+.food-status{padding:14px;border-radius:var(--r);background:var(--blue-dim);border:1px solid var(--blue-b);color:var(--blue);font-size:12px;margin-bottom:14px}
+.food-status.err{background:var(--red-dim);border-color:var(--red-b);color:var(--red)}
+.food-source{margin-top:14px;font-size:10px;color:var(--ink-3);font-family:'IBM Plex Mono',monospace}
 
 /* ── Layout ── */
 .main-grid{display:grid;grid-template-columns:380px 1fr;gap:20px;align-items:start}
@@ -243,7 +285,7 @@ input[type=number]{-moz-appearance:textfield}
   <div>
     <div class="eyebrow">Investeringsanalys · Sverige 2026</div>
     <h1>Finansiell <em>Kalkylator</em></h1>
-    <p class="header-sub">Ränta-på-ränta · Bolåneanalys · Uppdaterade regler april 2026</p>
+    <p class="header-sub">Ränta-på-ränta · Bolån · Hyra vs äga · Matskanning</p>
   </div>
   <div class="header-date" id="hdate"></div>
 </div>
@@ -258,6 +300,9 @@ input[type=number]{-moz-appearance:textfield}
   </button>
   <button class="tab-nav-btn" onclick="switchTab('rentbuy',this)">
     <span class="tic">⚖</span> Hyra vs Äga
+  </button>
+  <button class="tab-nav-btn" onclick="switchTab('food',this)">
+    <span class="tic">📷</span> Matskanning
   </button>
 </div>
 
@@ -831,6 +876,77 @@ input[type=number]{-moz-appearance:textfield}
 </div>
 </div><!-- /tab-rentbuy -->
 
+<!-- ═══════════════ TAB 4: MATSKANNING ═══════════════ -->
+<div class="tab-content" id="tab-food">
+  <div class="food-layout">
+
+    <div class="panel">
+      <div class="panel-head"><div class="picon pi-green">📷</div><div class="panel-title">Skanna streckkod</div></div>
+      <div id="food-reader"></div>
+      <div class="food-scan-actions">
+        <button type="button" class="btn-secondary" id="food-start-btn" onclick="startFoodScan()">Starta kamera</button>
+        <button type="button" class="btn-secondary" id="food-stop-btn" onclick="stopFoodScan()" disabled>Stoppa</button>
+      </div>
+      <div class="sec-label">Eller skriv streckkod</div>
+      <div class="food-manual">
+        <input type="text" id="food-barcode" inputmode="numeric" placeholder="t.ex. 7310865004703" autocomplete="off">
+        <button type="button" class="btn" onclick="lookupFoodBarcode()">Sök →</button>
+      </div>
+      <p class="food-hint">Rikta kameran mot streckkoden på förpackningen. Data kommer från Open Food Facts (öppen databas).</p>
+    </div>
+
+    <div class="right-col">
+      <div id="food-status" class="food-status" style="display:none"></div>
+
+      <div class="panel food-result" id="food-result">
+        <div class="food-hero">
+          <div id="food-image-wrap" class="food-img placeholder">🍽</div>
+          <div style="flex:1;min-width:0">
+            <div class="food-name" id="food-name">—</div>
+            <div class="food-brand" id="food-brand">—</div>
+            <div id="food-health" class="health-badge unk">Okänd</div>
+          </div>
+        </div>
+
+        <div class="food-meta">
+          <div class="stat green">
+            <div class="stat-label">Nutri-Score</div>
+            <div class="stat-value" id="food-nutri">—</div>
+          </div>
+          <div class="stat amber">
+            <div class="stat-label">NOVA</div>
+            <div class="stat-value" id="food-nova">—</div>
+          </div>
+          <div class="stat blue">
+            <div class="stat-label">Streckkod</div>
+            <div class="stat-value" id="food-code" style="font-size:1rem">—</div>
+          </div>
+        </div>
+
+        <div class="sec-label">Allergener &amp; innehåll</div>
+        <div class="allergen-grid" id="food-allergens"></div>
+
+        <div class="sec-label">Ingredienser</div>
+        <div class="food-ingredients" id="food-ingredients">—</div>
+        <p class="food-source">Källa: Open Food Facts · Bedömning baserad på Nutri-Score (A–E)</p>
+      </div>
+
+      <div class="panel" id="food-empty">
+        <div class="panel-head"><div class="picon pi-amber">ℹ</div><div class="panel-title">Så fungerar det</div></div>
+        <p style="color:var(--ink-2);line-height:1.55;font-size:12px;margin-bottom:12px">
+          Skanna eller ange streckkoden. Du får en enkel hälsobedömning och ser om produkten innehåller vanliga allergener som vete, mjölk, ägg, nötter m.m.
+        </p>
+        <div class="allergen-grid">
+          <div class="allergen-chip no"><span class="dot"></span>Hälsosam = A/B</div>
+          <div class="allergen-chip" style="background:var(--amber-dim);border-color:var(--amber-b);color:var(--amber)"><span class="dot" style="background:var(--amber-mid)"></span>Mellan = C</div>
+          <div class="allergen-chip yes"><span class="dot"></span>Ohälsosam = D/E</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div><!-- /tab-food -->
+
 </div><!-- /wrapper -->
 
 <script>
@@ -840,6 +956,7 @@ document.getElementById('hdate').textContent =
 
 // ── Tab switching ──
 function switchTab(id, btn) {
+  if (id !== 'food') stopFoodScan();
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.tab-nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + id).classList.add('active');
@@ -1604,6 +1721,229 @@ window.addEventListener('DOMContentLoaded', () => {
   calcRentBuy();
   drawPriceHistory();
   drawInvestChart();
+});
+
+// ─────────────────── FOOD BARCODE SCANNER ───────────────────
+let foodScanner = null;
+let foodScanBusy = false;
+let lastFoodCode = '';
+
+const FOOD_ALLERGENS = [
+  { id: 'gluten', label: 'Vete / gluten', tags: ['en:gluten', 'en:wheat', 'en:barley', 'en:rye', 'en:oats', 'en:spelt'] },
+  { id: 'milk', label: 'Mjölk', tags: ['en:milk', 'en:lactose', 'en:dairy'] },
+  { id: 'eggs', label: 'Ägg', tags: ['en:eggs', 'en:egg'] },
+  { id: 'nuts', label: 'Nötter', tags: ['en:nuts', 'en:almonds', 'en:hazelnuts', 'en:walnuts', 'en:cashews', 'en:pecan-nuts', 'en:brazil-nuts', 'en:pistachio-nuts', 'en:macadamia-nuts'] },
+  { id: 'peanuts', label: 'Jordnötter', tags: ['en:peanuts'] },
+  { id: 'soy', label: 'Soja', tags: ['en:soybeans', 'en:soy'] },
+  { id: 'fish', label: 'Fisk', tags: ['en:fish'] },
+  { id: 'shellfish', label: 'Skaldjur', tags: ['en:crustaceans', 'en:molluscs'] },
+  { id: 'sesame', label: 'Sesam', tags: ['en:sesame-seeds'] },
+  { id: 'celery', label: 'Selleri', tags: ['en:celery'] },
+  { id: 'mustard', label: 'Senap', tags: ['en:mustard'] },
+  { id: 'sulphites', label: 'Sulfiter', tags: ['en:sulphur-dioxide-and-sulphites'] },
+];
+
+const ALLERGEN_KEYWORDS = {
+  gluten: ['vete', 'wheat', 'gluten', 'korn', 'råg', 'barley', 'rye', 'spelt', 'dinkel', 'havre'],
+  milk: ['mjölk', 'milk', 'grädde', 'cream', 'ost', 'cheese', 'smör', 'butter', 'yoghurt', 'laktos', 'whey', 'vassle', 'skummjölk'],
+  eggs: ['ägg', 'egg', 'äggula', 'äggvita'],
+  nuts: ['nöt', 'almond', 'mandel', 'hazelnut', 'hasselnöt', 'walnut', 'valnöt', 'cashew', 'pistachio', 'pistage'],
+  peanuts: ['jordnöt', 'peanut'],
+  soy: ['soja', 'soy', 'soya'],
+  fish: ['fisk', 'fish', 'lax', 'salmon', 'torsk', 'cod', 'ansjovis'],
+  shellfish: ['räka', 'shrimp', 'krabba', 'crab', 'mussla', 'blåmussla', 'skaldjur'],
+  sesame: ['sesam', 'sesame'],
+  celery: ['selleri', 'celery'],
+  mustard: ['senap', 'mustard'],
+  sulphites: ['sulfit', 'sulphite', 'sulfite', 'svaveldioxid'],
+};
+
+function setFoodStatus(msg, isErr) {
+  const el = document.getElementById('food-status');
+  el.style.display = msg ? 'block' : 'none';
+  el.className = 'food-status' + (isErr ? ' err' : '');
+  el.textContent = msg || '';
+}
+
+function healthFromNutri(grade) {
+  const g = (grade || '').toLowerCase();
+  if (g === 'a' || g === 'b') return { level: 'good', label: 'Hälsosam', hint: 'Nutri-Score ' + g.toUpperCase() };
+  if (g === 'c') return { level: 'mid', label: 'Mellan', hint: 'Nutri-Score C' };
+  if (g === 'd' || g === 'e') return { level: 'bad', label: 'Ohälsosam', hint: 'Nutri-Score ' + g.toUpperCase() };
+  return null;
+}
+
+function healthFromNutrients(n) {
+  if (!n) return { level: 'unk', label: 'Okänd', hint: 'Saknar Nutri-Score' };
+  const sugar = n['sugars_100g'];
+  const salt = n['salt_100g'];
+  const sat = n['saturated-fat_100g'];
+  const energy = n['energy-kcal_100g'];
+  let score = 0;
+  if (sugar != null) score += sugar > 22.5 ? 2 : sugar > 5 ? 1 : 0;
+  if (salt != null) score += salt > 1.5 ? 2 : salt > 0.3 ? 1 : 0;
+  if (sat != null) score += sat > 5 ? 2 : sat > 1.5 ? 1 : 0;
+  if (energy != null) score += energy > 400 ? 1 : 0;
+  if (score >= 4) return { level: 'bad', label: 'Ohälsosam', hint: 'Uppskattat från näringsvärden' };
+  if (score >= 2) return { level: 'mid', label: 'Mellan', hint: 'Uppskattat från näringsvärden' };
+  if (sugar != null || salt != null || sat != null) return { level: 'good', label: 'Hälsosam', hint: 'Uppskattat från näringsvärden' };
+  return { level: 'unk', label: 'Okänd', hint: 'Otillräcklig data' };
+}
+
+function detectAllergens(product) {
+  const tags = [
+    ...(product.allergens_tags || []),
+    ...(product.traces_tags || []),
+    ...(product.ingredients_analysis_tags || []),
+  ].map(t => t.toLowerCase());
+  const text = [
+    product.allergens || '',
+    product.allergens_from_ingredients || '',
+    product.ingredients_text_sv || '',
+    product.ingredients_text || '',
+    product.ingredients_text_en || '',
+  ].join(' ').toLowerCase();
+
+  return FOOD_ALLERGENS.map(a => {
+    const fromTags = a.tags.some(t => tags.includes(t) || tags.some(x => x.includes(t.replace('en:', ''))));
+    const keys = ALLERGEN_KEYWORDS[a.id] || [];
+    const fromText = keys.some(k => text.includes(k));
+    return { ...a, present: fromTags || fromText };
+  });
+}
+
+function renderFoodProduct(barcode, product) {
+  document.getElementById('food-empty').style.display = 'none';
+  document.getElementById('food-result').classList.add('show');
+
+  const name = product.product_name_sv || product.product_name || product.generic_name_sv || product.generic_name || 'Okänd produkt';
+  const brand = product.brands || 'Okänt märke';
+  document.getElementById('food-name').textContent = name;
+  document.getElementById('food-brand').textContent = brand;
+  document.getElementById('food-code').textContent = barcode;
+
+  const imgWrap = document.getElementById('food-image-wrap');
+  const imgUrl = product.image_front_small_url || product.image_url || product.image_small_url;
+  if (imgUrl) {
+    imgWrap.className = 'food-img';
+    imgWrap.innerHTML = `<img src="${imgUrl}" alt="" style="width:100%;height:100%;object-fit:contain;border-radius:inherit">`;
+  } else {
+    imgWrap.className = 'food-img placeholder';
+    imgWrap.textContent = '🍽';
+  }
+
+  const nutri = (product.nutriscore_grade || product.nutrition_grades || '').toUpperCase() || '—';
+  document.getElementById('food-nutri').textContent = nutri;
+  const nova = product.nova_group != null ? String(product.nova_group) : '—';
+  document.getElementById('food-nova').textContent = nova;
+
+  const health = healthFromNutri(product.nutriscore_grade || product.nutrition_grades)
+    || healthFromNutrients(product.nutriments);
+  const badge = document.getElementById('food-health');
+  badge.className = 'health-badge ' + health.level;
+  badge.textContent = health.label + ' · ' + health.hint;
+
+  const allergens = detectAllergens(product);
+  document.getElementById('food-allergens').innerHTML = allergens.map(a => `
+    <div class="allergen-chip ${a.present ? 'yes' : 'no'}">
+      <span class="dot"></span>
+      ${a.present ? 'Innehåller' : 'Ej listad'}: ${a.label}
+    </div>
+  `).join('');
+
+  const ingredients = product.ingredients_text_sv || product.ingredients_text || product.ingredients_text_en || 'Inga ingredienser listade i databasen.';
+  document.getElementById('food-ingredients').textContent = ingredients;
+}
+
+async function lookupFoodBarcode(code) {
+  const barcode = String(code || document.getElementById('food-barcode').value || '').replace(/\D/g, '');
+  if (barcode.length < 8) {
+    setFoodStatus('Ange en giltig streckkod (minst 8 siffror).', true);
+    return;
+  }
+  if (foodScanBusy && barcode === lastFoodCode) return;
+  foodScanBusy = true;
+  lastFoodCode = barcode;
+  document.getElementById('food-barcode').value = barcode;
+  setFoodStatus('Hämtar produkt ' + barcode + '…');
+
+  try {
+    const url = `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(barcode)}.json`;
+    const res = await fetch(url, { headers: { Accept: 'application/json', 'User-Agent': 'swecalc-foodscan/1.0' } });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (data.status !== 1 || !data.product) {
+      setFoodStatus('Produkten hittades inte i Open Food Facts. Prova en annan vara.', true);
+      document.getElementById('food-result').classList.remove('show');
+      document.getElementById('food-empty').style.display = 'block';
+      return;
+    }
+    setFoodStatus('Produkt hittad.');
+    renderFoodProduct(barcode, data.product);
+    setTimeout(() => setFoodStatus(''), 1800);
+  } catch (e) {
+    setFoodStatus('Kunde inte hämta produkt: ' + (e.message || 'nätverksfel'), true);
+  } finally {
+    foodScanBusy = false;
+  }
+}
+
+async function startFoodScan() {
+  if (!window.Html5Qrcode) {
+    setFoodStatus('Skanningsbiblioteket kunde inte laddas.', true);
+    return;
+  }
+  if (foodScanner) return;
+  setFoodStatus('Startar kamera…');
+  try {
+    foodScanner = new Html5Qrcode('food-reader');
+    const formats = window.Html5QrcodeSupportedFormats
+      ? [
+          Html5QrcodeSupportedFormats.EAN_13,
+          Html5QrcodeSupportedFormats.EAN_8,
+          Html5QrcodeSupportedFormats.UPC_A,
+          Html5QrcodeSupportedFormats.UPC_E,
+          Html5QrcodeSupportedFormats.CODE_128,
+        ]
+      : undefined;
+    await foodScanner.start(
+      { facingMode: 'environment' },
+      { fps: 8, qrbox: { width: 280, height: 140 }, aspectRatio: 1.777, formatsToSupport: formats },
+      (decoded) => {
+        const code = String(decoded).replace(/\D/g, '');
+        if (code.length >= 8) lookupFoodBarcode(code);
+      },
+      () => {}
+    );
+    document.getElementById('food-start-btn').disabled = true;
+    document.getElementById('food-start-btn').classList.add('on');
+    document.getElementById('food-stop-btn').disabled = false;
+    setFoodStatus('Kameran är igång — rikta mot streckkoden.');
+  } catch (e) {
+    foodScanner = null;
+    setFoodStatus('Kunde inte starta kameran. Tillåt kamerabehörighet eller skriv in streckkoden manuellt. (' + (e.message || e) + ')', true);
+  }
+}
+
+async function stopFoodScan() {
+  if (!foodScanner) {
+    document.getElementById('food-start-btn').disabled = false;
+    document.getElementById('food-start-btn').classList.remove('on');
+    document.getElementById('food-stop-btn').disabled = true;
+    return;
+  }
+  try {
+    await foodScanner.stop();
+    await foodScanner.clear();
+  } catch (_) {}
+  foodScanner = null;
+  document.getElementById('food-start-btn').disabled = false;
+  document.getElementById('food-start-btn').classList.remove('on');
+  document.getElementById('food-stop-btn').disabled = true;
+}
+
+document.getElementById('food-barcode')?.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') lookupFoodBarcode();
 });
 </script>
 </body>
