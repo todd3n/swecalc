@@ -421,7 +421,7 @@ input[type=number]{-moz-appearance:textfield}
 
     <!-- Mode switcher -->
     <div class="ctabs" style="margin-bottom:16px" id="loan-mode-tabs">
-      <button class="ctab on" onclick="switchLoanMode('salary',this)">📊 Från lön → Maxlån</button>
+      <button class="ctab on" onclick="switchLoanMode('salary',this)">📊 Från lön → Maxlån &amp; KI</button>
       <button class="ctab" onclick="switchLoanMode('price',this)">🏠 Från pris → Lönekrav</button>
     </div>
 
@@ -436,7 +436,19 @@ input[type=number]{-moz-appearance:textfield}
         <div class="field"><label>Hushållstyp</label><select id="l-hh-a"><option value="1">Singel</option><option value="2">Par</option></select></div>
         <div class="field"><label>Barn</label><div class="iw has-sfx"><input type="number" id="l-kids-a" value="0" min="0" max="10" step="1"><span class="sfx">st</span></div></div>
       </div>
-      <div class="field"><label>Övriga lån/mån (CSN, billån etc.)</label><div class="iw has-pfx"><span class="pfx">kr</span><input type="number" id="l-other-a" value="0" min="0" step="500"></div></div>
+      <div class="row2">
+        <div class="field"><label>Kontantinsats</label>
+          <select id="l-down-sal">
+            <option value="10" selected>10% (minimum)</option>
+            <option value="15">15%</option>
+            <option value="20">20%</option>
+            <option value="25">25%</option>
+            <option value="30">30%</option>
+          </select>
+        </div>
+        <div class="field"><label>Övriga lån/mån</label><div class="iw has-pfx"><span class="pfx">kr</span><input type="number" id="l-other-a" value="0" min="0" step="500"></div></div>
+      </div>
+      <p style="font-size:11px;color:var(--ink-3);line-height:1.45;margin-top:4px">Kalkylen ger max bolån utifrån KALP + kalkylränta, samt vilket bostadspris och kontantinsats som krävs.</p>
     </div>
 
     <!-- MODE B: Price input -->
@@ -552,11 +564,25 @@ input[type=number]{-moz-appearance:textfield}
     <div id="loan-alert" class="alert blue"><span class="alert-icon">ℹ</span><div class="alert-text"><strong>Fyll i parametrarna</strong>Klicka på "Beräkna bolån" för att se din bolåneanalys.</div></div>
 
     <!-- Loan stat cards -->
-    <div class="loan-stats">
+    <div class="loan-stats" id="loan-stats-price">
       <div class="stat blue"><div class="stat-label">Bolånebelopp</div><div class="stat-value" id="l-loan-amt">—</div><div class="stat-badge" id="l-ltv-badge">—</div></div>
       <div class="stat amber"><div class="stat-label">Amortering/mån</div><div class="stat-value" id="l-amort">—</div><div class="stat-badge" id="l-amort-pct">—</div></div>
       <div class="stat red"><div class="stat-label">Total månadskostnad</div><div class="stat-value" id="l-monthly">—</div><div class="stat-badge" id="l-monthly-sub">—</div></div>
       <div class="stat green"><div class="stat-label">Krav bruttolön</div><div class="stat-value" id="l-salary">—</div><div class="stat-badge" id="l-salary-sub">—</div></div>
+    </div>
+
+    <!-- Salary-mode highlight: max loan + down payment -->
+    <div class="panel" id="loan-salary-summary">
+      <div class="panel-head"><div class="picon pi-green">📊</div><div class="panel-title">Från lön → maxlån &amp; kontantinsats</div></div>
+      <div class="tech-grid">
+        <div class="tc" style="border-left:3px solid var(--blue)"><div class="tc-label">Max bolån</div><div class="tc-val c" id="ls-max-loan">—</div></div>
+        <div class="tc" style="border-left:3px solid var(--violet-mid)"><div class="tc-label">Max bostadspris</div><div class="tc-val v" id="ls-max-price">—</div></div>
+        <div class="tc" style="border-left:3px solid var(--amber-mid)"><div class="tc-label">Kontantinsats</div><div class="tc-val a" id="ls-down">—</div><div style="font-size:9px;color:var(--ink-3);margin-top:2px" id="ls-down-pct">—</div></div>
+        <div class="tc" style="border-left:3px solid var(--green-mid)"><div class="tc-label">Månadskostnad (nu)</div><div class="tc-val g" id="ls-monthly">—</div></div>
+      </div>
+      <div style="margin-top:12px;padding:10px 12px;background:var(--green-dim);border:1px solid var(--green-b);border-radius:var(--r);font-size:11px;color:var(--green);line-height:1.5" id="ls-explain">
+        —
+      </div>
     </div>
 
     <!-- LTV meter -->
@@ -1271,6 +1297,8 @@ function switchLoanMode(mode, btn){
   btn.classList.add('on');
   document.getElementById('lm-salary').style.display = mode==='salary'?'block':'none';
   document.getElementById('lm-price').style.display  = mode==='price' ?'block':'none';
+  const salSum = document.getElementById('loan-salary-summary');
+  if(salSum) salSum.style.display = mode==='salary' ? 'block' : 'none';
 }
 
 // Swedish income tax approximation 2026 (Stockholm kommunalskatt ~29.8% + state)
@@ -1300,12 +1328,14 @@ function calcLoan(){
   let price, loanAmt, grossNeeded, hh, kids, otherDebt;
 
   if(loanMode === 'salary'){
-    // --- MODE A: Salary → max loan ---
+    // --- MODE A: Salary → max loan + down payment ---
     const sal1  = parseFloat(document.getElementById('l-sal-1').value)||0;
     const sal2  = parseFloat(document.getElementById('l-sal-2').value)||0;
     hh          = parseInt(document.getElementById('l-hh-a').value);
     kids        = parseInt(document.getElementById('l-kids-a').value)||0;
     otherDebt   = parseFloat(document.getElementById('l-other-a').value)||0;
+    const downPctSal = Math.max(10, parseFloat(document.getElementById('l-down-sal').value)||10) / 100;
+    const ltvTarget  = 1 - downPctSal;
 
     const grossTotal = sal1 + sal2;
     const netMon     = netMonthly(sal1) + netMonthly(sal2);
@@ -1315,15 +1345,21 @@ function calcLoan(){
     if(available <= 0){
       document.getElementById('loan-alert').className='alert red';
       document.getElementById('loan-alert').innerHTML='<span class="alert-icon">⚠</span><div class="alert-text"><strong>Lönen räcker inte</strong>Efter KALP-krav och levnadskostnader finns inget utrymme för bolånebetalningar.</div>';
+      const salSum = document.getElementById('loan-salary-summary');
+      if(salSum) salSum.style.display = 'block';
       return;
     }
 
-    // available = loan*(stress/12) + loan*(amortPct/12)
-    // We don't know amort yet — iterate: assume 90% LTV → amort 2%
-    const amortPct  = 0.02;
-    loanAmt         = available / (stress/12 + amortPct/12);
-    price           = loanAmt / 0.90; // 10% KI
-    grossNeeded     = grossTotal;
+    // Iterate amort because LTV depends on down payment choice
+    let amortGuess = ltvTarget > 0.70 ? 0.02 : ltvTarget > 0.50 ? 0.01 : 0;
+    loanAmt = available / (stress/12 + amortGuess/12);
+    price = loanAmt / ltvTarget;
+    // Recalculate amort from final LTV (should match target)
+    const ltvCheck = loanAmt / price;
+    amortGuess = ltvCheck > 0.70 ? 0.02 : ltvCheck > 0.50 ? 0.01 : 0;
+    loanAmt = available / (stress/12 + amortGuess/12);
+    price = loanAmt / ltvTarget;
+    grossNeeded = grossTotal;
 
   } else {
     // --- MODE B: Price → required salary ---
@@ -1397,6 +1433,27 @@ function calcLoan(){
   document.getElementById('l-salary').textContent      = SEK(Math.round(grossNeeded));
   document.getElementById('l-salary-sub').textContent  = loanMode==='salary'?'Din bruttolön/mån':'Krav bruttolön/mån';
 
+  // --- Salary mode summary: max loan + kontantinsats ---
+  const salSum = document.getElementById('loan-salary-summary');
+  if(salSum){
+    if(loanMode === 'salary'){
+      const downKr = Math.max(0, price - loanAmt);
+      const downPctShow = price > 0 ? (downKr / price * 100) : 10;
+      salSum.style.display = 'block';
+      document.getElementById('ls-max-loan').textContent = SEK(Math.round(loanAmt));
+      document.getElementById('ls-max-price').textContent = SEK(Math.round(price));
+      document.getElementById('ls-down').textContent = SEK(Math.round(downKr));
+      document.getElementById('ls-down-pct').textContent = downPctShow.toFixed(0) + '% av priset · min 10% enligt bolånetak';
+      document.getElementById('ls-monthly').textContent = SEK(Math.round(totalMon + fee));
+      document.getElementById('ls-explain').innerHTML =
+        `Med din lön klarar du ca <strong>${SEK(Math.round(loanAmt))}</strong> i bolån.
+         Vid <strong>${downPctShow.toFixed(0)}%</strong> kontantinsats blir maxpriset
+         <strong>${SEK(Math.round(price))}</strong> — du behöver
+         <strong>${SEK(Math.round(downKr))}</strong> i kontantinsats.`;
+    } else {
+      salSum.style.display = 'none';
+    }
+  }
   // --- LTV bar ---
   document.getElementById('l-ltv-bar').style.width      = Math.min(ltv*100,100)+'%';
   document.getElementById('l-ltv-bar').style.background = ltvColor;
@@ -1836,6 +1893,7 @@ function drawPriceHistory(){
 window.addEventListener('DOMContentLoaded', () => {
   calcCompound();
   syncKontant();
+  calcLoan();
   calcRentBuy();
   calcBudget();
   drawPriceHistory();
