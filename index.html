@@ -2091,6 +2091,8 @@ function drawBudgetChart(labels, port, equity, total) {
 let foodScanner = null;
 let foodScanBusy = false;
 let lastFoodCode = '';
+let lastFoodLookupAt = 0;
+let foodStartPending = false;
 
 const FOOD_ALLERGENS = [
   { id: 'gluten', label: 'Vete / gluten', tags: ['en:gluten', 'en:wheat', 'en:barley', 'en:rye', 'en:oats', 'en:spelt'] },
@@ -2190,7 +2192,20 @@ function renderFoodProduct(barcode, product) {
   const imgUrl = product.image_front_small_url || product.image_url || product.image_small_url;
   if (imgUrl) {
     imgWrap.className = 'food-img';
-    imgWrap.innerHTML = `<img src="${imgUrl}" alt="" style="width:100%;height:100%;object-fit:contain;border-radius:inherit">`;
+    const safeImageUrl = (() => { try { const url = new URL(imgUrl, window.location.origin); return url.protocol === 'https:' ? url.href : ''; } catch { return ''; } })();
+    imgWrap.replaceChildren();
+    if (safeImageUrl) {
+      const image = document.createElement('img');
+      image.src = safeImageUrl;
+      image.alt = '';
+      image.loading = 'lazy';
+      image.referrerPolicy = 'no-referrer';
+      image.style.cssText = 'width:100%;height:100%;object-fit:contain;border-radius:inherit';
+      imgWrap.appendChild(image);
+    } else {
+      imgWrap.className = 'food-img placeholder';
+      imgWrap.textContent = '🍽';
+    }
   } else {
     imgWrap.className = 'food-img placeholder';
     imgWrap.textContent = '🍽';
@@ -2225,15 +2240,25 @@ async function lookupFoodBarcode(code) {
     setFoodStatus('Ange en giltig streckkod (minst 8 siffror).', true);
     return;
   }
-  if (foodScanBusy && barcode === lastFoodCode) return;
+  const now = Date.now();
+  if (foodScanBusy) return;
+  if (barcode === lastFoodCode && now - lastFoodLookupAt < 5000) return;
   foodScanBusy = true;
   lastFoodCode = barcode;
+  lastFoodLookupAt = now;
   document.getElementById('food-barcode').value = barcode;
   setFoodStatus('Hämtar produkt ' + barcode + '…');
 
   try {
     const url = `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(barcode)}.json`;
-    const res = await fetch(url, { headers: { Accept: 'application/json', 'User-Agent': 'swecalc-foodscan/1.0' } });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
+    let res;
+    try {
+      res = await fetch(url, { headers: { Accept: 'application/json' }, signal: controller.signal });
+    } finally {
+      clearTimeout(timeoutId);
+    }
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
     if (data.status !== 1 || !data.product) {
@@ -2246,21 +2271,27 @@ async function lookupFoodBarcode(code) {
     renderFoodProduct(barcode, data.product);
     setTimeout(() => setFoodStatus(''), 1800);
   } catch (e) {
-    setFoodStatus('Kunde inte hämta produkt: ' + (e.message || 'nätverksfel'), true);
+    const message = e && e.name === 'AbortError' ? 'Anropet tog för lång tid. Kontrollera uppkopplingen och försök igen.' : (e.message || 'nätverksfel');
+    setFoodStatus('Kunde inte hämta produkt: ' + message, true);
   } finally {
     foodScanBusy = false;
   }
 }
 
 async function startFoodScan() {
+  if (foodStartPending || foodScanner) return;
+  if (!window.isSecureContext) {
+    setFoodStatus('Kameran kräver en säker anslutning (HTTPS). Du kan fortfarande skriva in streckkoden manuellt.', true);
+    return;
+  }
   if (!window.Html5Qrcode) {
     setFoodStatus('Skanningsbiblioteket kunde inte laddas.', true);
     return;
   }
-  if (foodScanner) return;
+  foodStartPending = true;
   setFoodStatus('Startar kamera…');
   try {
-    foodScanner = new Html5Qrcode('food-reader');
+    foodScanner = new Html5Qrcode('food-reader', { verbose: false });
     const formats = window.Html5QrcodeSupportedFormats
       ? [
           Html5QrcodeSupportedFormats.EAN_13,
@@ -2272,10 +2303,13 @@ async function startFoodScan() {
       : undefined;
     await foodScanner.start(
       { facingMode: 'environment' },
-      { fps: 8, qrbox: { width: 280, height: 140 }, aspectRatio: 1.777, formatsToSupport: formats },
+      { fps: 10, qrbox: (viewWidth, viewHeight) => ({ width: Math.min(viewWidth * 0.9, 420), height: Math.min(viewHeight * 0.42, 180) }), aspectRatio: 1.777, formatsToSupport: formats, disableFlip: true },
       (decoded) => {
         const code = String(decoded).replace(/\D/g, '');
-        if (code.length >= 8) lookupFoodBarcode(code);
+        if (code.length >= 8 && !foodScanBusy) {
+          void stopFoodScan();
+          void lookupFoodBarcode(code);
+        }
       },
       () => {}
     );
@@ -2284,8 +2318,13 @@ async function startFoodScan() {
     document.getElementById('food-stop-btn').disabled = false;
     setFoodStatus('Kameran är igång — rikta mot streckkoden.');
   } catch (e) {
+    if (foodScanner) {
+      try { await foodScanner.clear(); } catch (_) {}
+    }
     foodScanner = null;
     setFoodStatus('Kunde inte starta kameran. Tillåt kamerabehörighet eller skriv in streckkoden manuellt. (' + (e.message || e) + ')', true);
+  } finally {
+    foodStartPending = false;
   }
 }
 
