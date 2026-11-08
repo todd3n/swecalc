@@ -9,7 +9,7 @@ Svenska kalkylatorer för privatekonomi, investeringar och boende. Projektet inn
 Öppna livesidan i en modern webbläsare. Kalkylatorerna körs i webbläsaren och kräver ingen inloggning.
 
 ## Streckkodsskanning
-Kamerastöd och behörighetsdialoger varierar mellan webbläsare och enheter.
+Kamerastöd och behörighetsdialoger varierar mellan webbläsare och enheter. A
 
 ## Begränsningar
 
